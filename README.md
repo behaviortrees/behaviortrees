@@ -4,11 +4,11 @@
 
 <br clear="left">
 
-![interface preview](preview.png)
+![The React editor with the Enemy Patrol AI example open](preview.png)
 
 A free, open-source visual editor for behavior trees, live at [behaviortrees.com](https://www.behaviortrees.com). Model AI for games, robotics, and simulations, then export to an open JSON format you can load with any [behavior3](http://behavior3.com)-compatible library.
 
-Originally based on [behavior3editor](https://github.com/behavior3/behavior3editor) by Renato de Pontes Pereira, since restyled onto the Nocturne design system and extended with a guides site and a next-generation React editor.
+Originally based on [behavior3editor](https://github.com/behavior3/behavior3editor) by Renato de Pontes Pereira, since rebuilt as a modern React editor on the Nocturne design system and extended with a guides site. The original AngularJS editor lives on at [old.behaviortrees.com](https://old.behaviortrees.com).
 
 ## What's in this repo
 
@@ -16,9 +16,9 @@ A pnpm + [Turborepo](https://turborepo.com) monorepo:
 
 | Path | What it is | Where it deploys |
 |------|------------|------------------|
-| `apps/editor/` | Next-gen editor (React + TypeScript + React Flow) | [new.behaviortrees.com](https://new.behaviortrees.com) |
-| `apps/editor-classic/` | Classic editor (AngularJS + gulp) | [behaviortrees.com](https://www.behaviortrees.com) |
-| `apps/site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) (also served at [new.behaviortrees.com/learn](https://new.behaviortrees.com/learn/)) |
+| `apps/editor/` | Main editor (React + TypeScript + React Flow) | [behaviortrees.com](https://www.behaviortrees.com) |
+| `apps/editor-classic/` | Classic editor (AngularJS + gulp) | [old.behaviortrees.com](https://old.behaviortrees.com) |
+| `apps/site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) |
 | `packages/examples/` | Shared example trees consumed by both editors | bundled into both editors |
 
 `apps/editor-classic` is intentionally **not** a workspace member — its gulp 3 toolchain keeps its own npm lockfile. Never run pnpm inside it.
@@ -59,7 +59,7 @@ gulp serve                  # live reload at http://127.0.0.1:8000
 
 ## Deployment
 
-`build-deploy.sh` builds the classic editor and the guides site, merging both into `deploy/` as the complete behaviortrees.com static site (Netlify runs this via `netlify.toml`). The React editor deploys through `apps/editor/vercel.json` (Vercel root directory: `apps/editor`); its build also bundles the guides site so `/learn` stays available on new.behaviortrees.com independently of the Netlify deploy.
+The React editor deploys to [behaviortrees.com](https://www.behaviortrees.com) through `apps/editor/vercel.json` (Vercel root directory: `apps/editor`); its build also bundles the guides site so `/learn` is served from the same deploy. `build-deploy.sh` builds the classic editor and the guides site, merging both into `deploy/` as the static site Netlify serves at [old.behaviortrees.com](https://old.behaviortrees.com) (via `netlify.toml`).
 
 ## License
 
