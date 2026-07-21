@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import ThemeToggle from '../theme-toggle';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 
 type AppLayoutProps = {
 	children: ReactNode;
@@ -22,16 +21,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 					: 'flex min-h-screen flex-col bg-base text-fg'
 			}
 		>
-			<header className="flex h-[54px] flex-none items-center justify-between border-b border-divider px-6">
-				<div className="flex items-center gap-3">
+			<header className="flex h-[54px] flex-none items-center gap-8 border-b border-divider px-6">
+				<Link to="/" className="flex items-center gap-3">
 					<div
 						className="grid h-[22px] w-[22px] place-items-center rounded-md border border-accent"
 						style={{ boxShadow: '0 0 10px var(--glow)' }}
 					>
 						<div className="h-2 w-2 rounded-[2px] bg-accent" />
 					</div>
-					<span className="text-[15px] font-medium tracking-[-0.01em]">Behavior Tree Editor</span>
-				</div>
+					<span className="text-[15px] font-medium tracking-[-0.01em]">
+						behavior<span className="text-accent">trees</span>
+					</span>
+				</Link>
 
 				<nav>
 					<ul className="flex items-center gap-6 text-[13px]">
@@ -60,9 +61,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 							<a href="/learn/" className="text-muted transition-colors hover:text-accent-soft">
 								Learn
 							</a>
-						</li>
-						<li className="flex items-center">
-							<ThemeToggle />
 						</li>
 					</ul>
 				</nav>

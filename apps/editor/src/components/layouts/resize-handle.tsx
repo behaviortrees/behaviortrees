@@ -65,6 +65,8 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({ side, width, onResize, onCo
 			className="group relative w-[5px] flex-none cursor-col-resize touch-none select-none"
 		>
 			<span className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-divider transition-colors group-hover:bg-accent group-focus-visible:bg-accent" />
+			{/* Grip pill so the divider reads as draggable before you hover it. */}
+			<span className="pointer-events-none absolute left-1/2 top-1/2 h-8 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted/60 transition-colors group-hover:bg-accent group-focus-visible:bg-accent" />
 		</div>
 	);
 };
