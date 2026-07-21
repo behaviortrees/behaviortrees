@@ -35,7 +35,7 @@ A pnpm + [Turborepo](https://turborepo.com) monorepo:
 ## Development
 
 ```sh
-git clone https://github.com/behaviortrees/behaviortrees.git
+git clone https://github.com/alanhoskins/behaviortrees.git
 cd behaviortrees
 pnpm install
 

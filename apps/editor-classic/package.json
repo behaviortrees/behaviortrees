@@ -4,8 +4,8 @@
   "version": "0.3.0",
   "homepage": "https://www.behaviortrees.com",
   "license": "MIT",
-  "bugs": "https://github.com/behaviortrees/behaviortrees/issues",
-  "repository": "github:behaviortrees/behaviortrees",
+  "bugs": "https://github.com/alanhoskins/behaviortrees/issues",
+  "repository": "github:alanhoskins/behaviortrees",
   "devDependencies": {
     "electron-packager": "^5.1.1",
     "electron-prebuilt": "^0.33.8",
