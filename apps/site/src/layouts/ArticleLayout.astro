@@ -99,7 +99,7 @@ const jsonLd = isArticle
         <nav>
             <a class="wordmark" href="/learn/">
                 <img src="/imgs/logo.svg" alt="" width="22" height="22" />
-                behavior<span>trees</span>
+                <span class="brand">behavior<span>trees</span></span>
             </a>
             <div class="nav-links">
                 <a href="/learn/">Home</a>
@@ -300,7 +300,7 @@ const jsonLd = isArticle
     .wordmark {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         font-weight: 500;
         font-size: 15px;
         text-decoration: none;
@@ -310,8 +310,9 @@ const jsonLd = isArticle
     .wordmark img {
         border-radius: 5px;
     }
-    .wordmark span {
-        color: var(--acc-deep);
+    /* Same accent as the editor header's wordmark. */
+    .wordmark .brand span {
+        color: var(--bt-accent);
     }
     .nav-links {
         display: flex;
