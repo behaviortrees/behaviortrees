@@ -70,7 +70,7 @@ var app_imgs = [
   'src/assets/imgs/**/*',
 ];
 var app_examples = [
-  'src/examples/**/*.json',
+  'packages/examples/trees/*.json',
 ];
 var app_html = [
   'src/app/**/*.html',

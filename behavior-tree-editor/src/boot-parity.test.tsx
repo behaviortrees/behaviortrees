@@ -18,7 +18,7 @@ import App from './app-base';
 import { useProjectStore } from './stores/useProjectStore';
 import type { Project } from './types';
 
-const EXAMPLES_DIR = join(__dirname, '../../src/examples');
+const EXAMPLES_DIR = join(__dirname, '../../packages/examples/trees');
 const PROJECT_KEY_PREFIX = 'bt-project-';
 const CURRENT_PROJECT_KEY = 'bt-current-project';
 const EXAMPLES_PROJECT_ID = 'examples';

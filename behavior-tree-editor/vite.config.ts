@@ -7,10 +7,10 @@ import tailwindcss from '@tailwindcss/vite';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 
-// The example trees live in ../src/examples (single source of truth, shared
+// The example trees live in packages/examples (single source of truth, shared
 // with the classic editor). Serve them at /examples in dev and copy them into
 // dist/examples on build so /?example=<name> works everywhere.
-const EXAMPLES_DIR = join(HERE, '../src/examples');
+const EXAMPLES_DIR = join(HERE, '../packages/examples/trees');
 
 const examplesPlugin = (): Plugin => ({
 	name: 'shared-examples',

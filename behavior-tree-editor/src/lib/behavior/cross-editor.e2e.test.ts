@@ -19,7 +19,7 @@ import { Project } from '../../types';
 const OLD_EDITOR_URL = process.env.OLD_EDITOR_URL;
 const CHROMIUM_PATH = process.env.CHROMIUM_PATH;
 
-const EXAMPLES_DIR = join(__dirname, '../../../../src/examples');
+const EXAMPLES_DIR = join(__dirname, '../../../../packages/examples/trees');
 const load = (name: string): B3Tree =>
   JSON.parse(readFileSync(join(EXAMPLES_DIR, name), 'utf8'));
 

@@ -14,7 +14,7 @@ import { DEFAULT_NODES } from './defaults';
 
 // The real example files shipped by the old editor at /examples/*.json —
 // the parity fixtures. Any behavior3 file the old editor wrote must load.
-const EXAMPLES_DIR = join(__dirname, '../../../../src/examples');
+const EXAMPLES_DIR = join(__dirname, '../../../../packages/examples/trees');
 const load = (name: string): B3Tree =>
   JSON.parse(readFileSync(join(EXAMPLES_DIR, name), 'utf8'));
 
