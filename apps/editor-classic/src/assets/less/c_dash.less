@@ -26,3 +26,19 @@
   z-index: @z-page;
   background-color: @color-light1;
 }
+
+// Sits above .dash-page but below the sidebar, so it only spans the content area.
+.dash-footer {
+  position: fixed;
+  bottom: 0px;
+  left: @size-sidebar;
+  right: 0px;
+  z-index: @z-page;
+  padding: @padding-small-2x @padding-large;
+  text-align: center;
+  color: @color-light4;
+  background-color: @color-light1;
+  border-top: 1px solid #E7E7E7;
+
+  a { color: @color-blue; }
+}
