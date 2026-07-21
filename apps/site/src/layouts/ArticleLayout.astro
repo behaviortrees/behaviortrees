@@ -64,7 +64,11 @@ const jsonLd = isArticle
 
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 
-    <script defer data-domain="behaviortrees.com" data-api="/pl/api/event" src="/pl/js/script.js"></script>
+    <script async src="/pl/js/script.js"></script>
+    <script is:inline>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init({ endpoint: "/pl/api/event" })
+    </script>
 </head>
 <body>
     <header class="site-header">

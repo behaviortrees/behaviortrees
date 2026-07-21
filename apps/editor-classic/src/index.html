@@ -20,7 +20,11 @@
   <meta name="twitter:description" content="Design behavior trees for game AI and robotics in a free online visual editor. Export to JSON. No signup required."/>
   <meta name="twitter:image" content="https://www.behaviortrees.com/imgs/og-image.png"/>
 
-  <script defer data-domain="behaviortrees.com" data-api="/pl/api/event" src="/pl/js/script.js"></script>
+  <script async src="/pl/js/script.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init({ endpoint: "/pl/api/event" })
+  </script>
 
   <link rel="stylesheet" href="css/preload.min.css?v=[BUILD_VERSION]-[BUILD_DATE]">
   <script type="text/javascript" src="js/preload.min.js?v=[BUILD_VERSION]-[BUILD_DATE]"></script>
