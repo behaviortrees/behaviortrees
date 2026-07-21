@@ -21,6 +21,8 @@ const BaseNode: React.FC<BaseNodeProps> = (props) => {
     data,
     selected,
     isConnectable,
+    sourcePosition = Position.Right,
+    targetPosition = Position.Left,
   } = props;
 
   const {
@@ -44,7 +46,7 @@ const BaseNode: React.FC<BaseNodeProps> = (props) => {
       {showTargetHandle && (
         <Handle
           type="target"
-          position={Position.Top}
+          position={targetPosition}
           isConnectable={isConnectable}
           className={cn(`w-3 h-3 !border-2 border-white dark:border-slate-900`, handleClassName)}
         />
@@ -60,7 +62,7 @@ const BaseNode: React.FC<BaseNodeProps> = (props) => {
       {showSourceHandle && (
         <Handle
           type="source"
-          position={Position.Bottom}
+          position={sourcePosition}
           isConnectable={isConnectable}
           className={cn(`w-3 h-3 !border-2 border-white dark:border-slate-900`, handleClassName)}
         />

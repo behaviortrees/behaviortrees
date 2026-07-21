@@ -15,6 +15,7 @@ import ReactFlow, {
   OnConnectEnd,
   ReactFlowInstance,
   NodePositionChange,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -47,6 +48,16 @@ const nodeTypes: NodeTypes = {
 // Edge types registry for ReactFlow
 const edgeTypes: EdgeTypes = {
   default: ContextEdge,
+};
+
+// Handles follow the persisted layout direction: parent → child flows
+// left-to-right in horizontal layout, top-to-bottom in vertical
+const getHandlePositions = () => {
+  const vertical = localStorage.getItem('bt-layout') === 'vertical';
+  return {
+    sourcePosition: vertical ? Position.Bottom : Position.Right,
+    targetPosition: vertical ? Position.Top : Position.Left,
+  };
 };
 
 const BehaviorTreeEditor: React.FC = () => {
@@ -116,6 +127,8 @@ const BehaviorTreeEditor: React.FC = () => {
     // Get previous positions for comparison (create if doesn't exist)
     const prevPositions = prevNodePositionsRef.current;
 
+    const handlePositions = getHandlePositions();
+
     // Convert blocks to nodes
     const flowNodes = Object.values(tree.blocks).map((block: Block) => {
       // Check if we should use a cached position
@@ -135,6 +148,7 @@ const BehaviorTreeEditor: React.FC = () => {
         id: nodeId,
         type: block.category,
         position,
+        ...handlePositions,
         data: {
           ...block,
           label: block.title || block.name,
@@ -636,6 +650,7 @@ const BehaviorTreeEditor: React.FC = () => {
         id: blockId,
         type: nodeData.category,
         position: roundedPosition,
+        ...getHandlePositions(),
         data: {
           id: blockId,
           name: nodeKey,
