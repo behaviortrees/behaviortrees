@@ -62,6 +62,7 @@
         else if (vm.type === 'nodes' && vm.format === 'json') {
           i.nodesAsData(data);
         }
+        $window.btAnalytics.track('import', {type: vm.type});
       } catch(e) {
         notificationService.error(
           'Invalid data',

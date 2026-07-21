@@ -52,6 +52,12 @@
       else if (vm.type === 'nodes' && vm.format === 'json') {
         _createJson(e.nodesToData());
       }
+
+      $window.btAnalytics.track('export', {
+        type: vm.type,
+        format: vm.format,
+        method: 'view'
+      });
     }
 
     function _createJson(data) {

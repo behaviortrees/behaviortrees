@@ -2,5 +2,11 @@
   "installCommand": "pnpm install",
   "buildCommand": "pnpm exec turbo run build --filter=@behaviortrees/editor --filter=@behaviortrees/site && cp -R ../site/dist/. dist/",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/ingest/static/:path*", "destination": "https://us-assets.i.posthog.com/static/:path*" },
+    { "source": "/ingest/:path*", "destination": "https://us.i.posthog.com/:path*" },
+    { "source": "/pl/js/script.js", "destination": "https://plausible.io/js/script.js" },
+    { "source": "/pl/api/event", "destination": "https://plausible.io/api/event" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

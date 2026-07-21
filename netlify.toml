@@ -18,3 +18,29 @@
 [build.environment]
   NODE_VERSION = "22"
   NPM_FLAGS = "--ignore-scripts --no-audit --no-fund"
+
+# First-party analytics proxies (ad-blocker resilience). Order matters:
+# the /ingest/static rule must precede the /ingest catch-all.
+[[redirects]]
+  from = "/ingest/static/*"
+  to = "https://us-assets.i.posthog.com/static/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/ingest/*"
+  to = "https://us.i.posthog.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/pl/js/script.js"
+  to = "https://plausible.io/js/script.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/pl/api/event"
+  to = "https://plausible.io/api/event"
+  status = 200
+  force = true

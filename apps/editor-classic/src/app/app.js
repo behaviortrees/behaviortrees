@@ -71,6 +71,7 @@ angular.module('app', [
                     $window.editor.import.treeAsData(data);
                   }
                   $window.editor.clearDirty();
+                  $window.btAnalytics.track('example_loaded', {example: match[1]});
                   $state.go('editor');
                 });
             });

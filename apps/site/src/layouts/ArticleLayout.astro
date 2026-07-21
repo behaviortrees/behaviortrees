@@ -64,7 +64,7 @@ const jsonLd = isArticle
 
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 
-    <script defer data-domain="behaviortrees.com" src="https://plausible.io/js/script.js"></script>
+    <script defer data-domain="behaviortrees.com" data-api="/pl/api/event" src="/pl/js/script.js"></script>
 </head>
 <body>
     <header class="site-header">

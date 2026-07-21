@@ -71,6 +71,7 @@
     function newTree() {
       var p = $window.editor.project.get();
       p.trees.add();
+      $window.btAnalytics.track('tree_created');
     }
 
     function select(id) {

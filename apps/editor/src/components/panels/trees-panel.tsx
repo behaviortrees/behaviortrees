@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pencil, Plus, Trash2, Workflow } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
+import { track } from '../../lib/analytics';
 
 const TreesPanel: React.FC = () => {
   const project = useProjectStore(state => state.project);
@@ -25,6 +26,7 @@ const TreesPanel: React.FC = () => {
     const title = prompt('Enter tree name:');
     if (title) {
       createTree(title);
+      track('tree_created');
     }
   };
 

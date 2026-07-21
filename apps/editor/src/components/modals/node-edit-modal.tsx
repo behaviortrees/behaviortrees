@@ -12,6 +12,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { Node, NodeCategory } from '../../types';
+import { track } from '../../lib/analytics';
 
 type PropertyRow = { key: string; value: string };
 
@@ -99,6 +100,7 @@ const NodeEditModal: React.FC<NodeEditModalProps> = ({
 				description: description.trim() || undefined,
 				properties,
 			});
+			track('custom_node_created', { category });
 			toast.success(`Node "${trimmed}" created`);
 		}
 		onOpenChange(false);

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToTree, parseImportedJson } from '../../lib/behavior/b3';
+import { track } from '../../lib/analytics';
 import { toast } from 'sonner';
 import ExportModal, { ExportType } from '../modals/export-modal';
 import {
@@ -79,6 +80,7 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
   const saveProject = useCallback(() => {
     if (project) {
       if (saveProjectStore()) {
+        track('project_saved');
         toast.success('Project saved successfully');
       } else {
         toast.error('Failed to save project');
@@ -122,6 +124,7 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
 
         if (imported.kind === 'project') {
           loadProject(imported.project);
+          track('import', { type: 'project' });
           toast.success('Project imported');
         } else if (imported.kind === 'tree') {
           if (!project) {
@@ -130,6 +133,7 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
           }
           const { tree, nodes } = b3ToTree(imported.tree, project.nodes);
           addImportedTree(tree, nodes);
+          track('import', { type: 'tree' });
           toast.success(`Tree "${tree.title}" imported`);
         } else {
           if (!project) {
@@ -137,6 +141,7 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
             return;
           }
           addNodes(imported.nodes);
+          track('import', { type: 'nodes' });
           toast.success(`${Object.keys(imported.nodes).length} node(s) imported`);
         }
       } catch (error) {

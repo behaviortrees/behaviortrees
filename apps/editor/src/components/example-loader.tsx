@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useProjectStore } from '../stores/useProjectStore';
 import { b3ToProject, b3ToTree, parseImportedJson } from '../lib/behavior/b3';
+import { track } from '../lib/analytics';
 
 // Deep links from the /learn guides: /?example=enemy-patrol fetches
 // /examples/enemy-patrol.json and opens it in a stable "Examples" project,
@@ -86,6 +87,7 @@ const ExampleLoader = () => {
 				// Drop the query string and land in the editor
 				window.history.replaceState(null, '', '/');
 				navigate('/editor');
+				track('example_loaded', { example: name });
 				toast.success(`Example "${label}" loaded`);
 			} catch (error) {
 				console.error('Failed to load example', error);

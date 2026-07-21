@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToProject, parseImportedJson, projectToB3 } from '../../lib/behavior/b3';
+import { track } from '../../lib/analytics';
 import { Button } from '../../components/ui/button';
 import { Plus, Download, Trash, FolderOpen, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -52,7 +53,8 @@ const ProjectsPage: React.FC = () => {
     if (projectName.trim() === '') return;
     
     createProject(projectName, projectDescription);
-    
+    track('project_created');
+
     // Get the created project
     const newProject = useProjectStore.getState().project;
     if (newProject) {

@@ -49,6 +49,7 @@
       projectModel
         .newProject(path, name)
         .then(function() {
+          $window.btAnalytics.track('project_created');
           $state.go('editor');
         });
     }

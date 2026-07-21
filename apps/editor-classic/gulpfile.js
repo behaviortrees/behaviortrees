@@ -46,6 +46,7 @@ var vendor_fonts = [
 
 var preload_js = [
   'src/assets/js/preload.js',
+  'src/assets/js/analytics.js',
 ];
 
 var preload_css = [

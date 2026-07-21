@@ -59,6 +59,7 @@
         p.nodes.update(vm.original, vm.node);  
       } else {
         p.nodes.add(vm.node);
+        $window.btAnalytics.track('custom_node_created', {category: vm.node.category});
       }
 
       $state.go('editor');

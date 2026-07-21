@@ -160,6 +160,7 @@
       projectModel
         .saveProject()
         .then(function() {
+          $window.btAnalytics.track('project_saved');
           notificationService.success(
             'Project saved',
             'The project has been saved'
@@ -175,6 +176,7 @@
     function onNewTree() {
       var project = _getProject();
       project.trees.add();
+      $window.btAnalytics.track('tree_created');
       return false;
     }
     function onUndo() {
