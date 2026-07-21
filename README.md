@@ -1,58 +1,59 @@
-# BEHAVIOR3EDITOR
+# Behavior Trees Editor
 
 ![interface preview](preview.png)
 
-**Behavior3 Editor** is the official visual editor for the **Behavior3** libraries. It can be accessed online or you can download it to have handle local projects.
+A free, open-source visual editor for behavior trees, live at [behaviortrees.com](https://www.behaviortrees.com). Model AI for games, robotics, and simulations, then export to an open JSON format you can load with any [behavior3](http://behavior3.com)-compatible library.
 
-- Info: http://behavior3.com
-- Editor: http://editor.behavior3.com
+Originally based on [behavior3editor](https://github.com/behavior3/behavior3editor) by Renato de Pontes Pereira, since restyled onto the Nocturne design system and extended with a guides site and a next-generation React editor.
 
+## What's in this repo
 
-## Why Behavior3 Editor?
+| Path | What it is | Where it deploys |
+|------|------------|------------------|
+| `src/` | Classic editor (AngularJS + gulp) | [behaviortrees.com](https://www.behaviortrees.com) |
+| `site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) |
+| `behaviour-tree-editor/` | Next-gen editor (React + TypeScript + React Flow) | [new.behaviortrees.com](https://new.behaviortrees.com) |
 
-Why should you use b3editor? What is different from other editors? Can it compete against commercial alternatives? - Well, check it out some characteristics of Behavior3 Editor:
+## Features
 
-- **Open Source Software**: under MIT license, you can use this software freely, adapt it to your need and even use a specialized internal version in your company. You can also contribute with bug fixes, suggestions and patches to make it better.
+- **Custom nodes**: create your own node types in any of the four basic categories — *composite*, *decorator*, *action*, or *condition*
+- **Node properties**: edit titles, descriptions, and custom properties per node instance
+- **Manual and auto layout**: drag nodes around, or press `a` to auto-organize the whole tree
+- **Multiple trees per project**: create and manage as many trees as you need
+- **JSON import/export**: an open format that works with any behavior3-compatible runtime
+- **No lock-in**: runs in the browser, no accounts, no external tools or engines required
 
-- **Open Format**: b3editor can export the modeled trees to JSON files, following an open format. If there is no official reader on your favorite language yet, you can develop your own library and use the trees created here. 
+## Development
 
-- **Formality**: the editor works above the basis created by Behavior3JS, which in turn is based on formal description of behavior trees. Thus, the editor provides a stable solution to model agents for your games or other applications such as robotics and simulations in general.
+### Classic editor
 
-- **Focus on Usability**: intuitiveness is the key word of b3editor. We focus on providing an easy, clean, and intuitive tool for programmers and non-programmers. If there is something obscure or too difficult to use, report it immediately!
+```sh
+npm install
+npx bower install
+gulp serve    # live reload at http://127.0.0.1:8000
+gulp build    # production build
+```
 
-- **Minimalist, but Functional**: b3editor follows a minimalist style, trying to reduce the amount of non-essential information presented on the screen. We focus on the important things: designing Behavior Trees. 
+### Guides site
 
-- **Customizable**: create your own node types and customize nodes instances individually. Create several projects and trees, change titles and add properties.
+```sh
+cd site
+npm install
+npm run dev
+```
 
-- **Big Projects Ahead**: we are working towards a collaborative tool in order to provide an awesome editor for big projects involving several designers working together. 
+### React editor
 
-- **Does not depends on other tools/editors/engines**.
+```sh
+cd behaviour-tree-editor
+pnpm install
+pnpm dev
+```
 
+## Deployment
 
+`build-deploy.sh` builds the classic editor and the guides site, merging both into `deploy/` as the complete behaviortrees.com static site (Netlify runs this via `netlify.toml`). The React editor deploys independently through its own `vercel.json`.
 
-## Main features
+## License
 
-- **Custom Nodes**: you can create your own node types inside one of the four basic categories - *composite*, *decorator*, *action* or *condition*. 
-- **Individual Node Properties**: you can modify node titles, description and custom properties.
-- **Manual and Auto Organization**: organize by dragging nodes around or just type "a" to auto organize the whole tree.
-- **Create and Manage Multiple Trees**: you can create and manage an unlimited number of trees.
-- **Import and Export to JSON**: export your project, tree or nodes to JSON format. Import them back. Use JSON on your own custom library or tool. You decide.
-
-
-## Limitations
-
-Nothing is perfect =( . Behavior3 Editor focus on Chrome (thus, working pretty well on Opera too), so it have some incompatibilities with Firefox, such as the image preview lag when dragging to create a node for the first time, and the ugly scroll bar inside the panels. Not tested on IE!
-
-
-## Looking for Behavior Tree Libraries?
-
-See http://behavior3.com for a complete list of libraries.
-
-*If you have implemented an library compatible with Behavior3 schematics, tell me and I link it there*.
-
-
-## Want to Contribute?
-
-Take a look at the issue list, suggest new features, report bugs, send me pull requests, write documentation and tutorials. There are many ways to contribute, do what you know and you can make Behavior3 Editor better!
-
-- More info: http://behavior3.com/donation
+MIT — see [LICENSE](LICENSE). Credit to the original [behavior3](https://github.com/behavior3) team for the editor this project grew from.
