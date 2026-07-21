@@ -7,6 +7,29 @@ const updatedDate = frontmatter?.updatedDate;
 const isArticle = !!frontmatter;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 
+// Amazon Associates tag — placeholder until the Associates account is approved.
+const amazonTag = 'behaviortrees-20';
+const books = [
+    {
+        title: 'Behavior Trees in Robotics and AI: An Introduction',
+        authors: 'Michele Colledanchise & Petter Ögren',
+        blurb: 'The definitive behavior tree reference, from theory through robotics practice.',
+        asin: '1138593737',
+    },
+    {
+        title: 'AI for Games, Third Edition',
+        authors: 'Ian Millington',
+        blurb: 'The standard game-AI textbook, including decision-making and behavior trees.',
+        asin: '1138483974',
+    },
+    {
+        title: 'Programming Game AI by Example',
+        authors: 'Mat Buckland',
+        blurb: 'A classic hands-on introduction to agent architectures for games.',
+        asin: '1556220782',
+    },
+];
+
 const jsonLd = isArticle
     ? {
           '@context': 'https://schema.org',
@@ -130,20 +153,28 @@ const jsonLd = isArticle
         <div class="ad-slot" data-ea-publisher="behaviortreescom" data-ea-type="text"></div>
         -->
 
-        <section class="newsletter">
-            <h2>Get behavior tree patterns in your inbox</h2>
-            <p>
-                Occasional deep dives on game AI and robotics behavior trees, plus early access
-                to new editor features. No spam, unsubscribe anytime.
+        <section class="reading">
+            <h2>Recommended reading</h2>
+            <p>Books that go deeper on behavior trees and game AI.</p>
+            <ul>
+                {
+                    books.map((book) => (
+                        <li>
+                            <a
+                                href={`https://www.amazon.com/dp/${book.asin}?tag=${amazonTag}`}
+                                rel="sponsored noopener"
+                                target="_blank"
+                            >
+                                {book.title}
+                            </a>
+                            <span class="authors"> — {book.authors}.</span> {book.blurb}
+                        </li>
+                    ))
+                }
+            </ul>
+            <p class="affiliate-note">
+                As an Amazon Associate, behaviortrees.com earns from qualifying purchases.
             </p>
-            <form
-                action="https://buttondown.com/api/emails/embed-subscribe/behaviortrees"
-                method="post"
-                target="_blank"
-            >
-                <input type="email" name="email" placeholder="you@example.com" required />
-                <button type="submit">Subscribe</button>
-            </form>
         </section>
     </main>
 
@@ -330,8 +361,8 @@ const jsonLd = isArticle
     /* Flush-left and asymmetric: the column hugs the left edge on wide
        viewports and the whitespace falls on the right. */
     main {
-        max-width: 42rem;
-        margin: 0 auto 0 max(1.25rem, calc(50vw - 30rem));
+        max-width: 48rem;
+        margin: 0 auto 0 max(1.25rem, calc(50vw - 33rem));
         padding: 4rem 1.25rem 5rem;
     }
 
@@ -461,66 +492,48 @@ const jsonLd = isArticle
         margin: 2.5rem 0;
     }
 
-    /* — newsletter — */
-    .newsletter {
+    /* — recommended reading — */
+    .reading {
         margin-top: 3.5rem;
         border: 1px solid var(--brd);
         background: var(--panel);
         border-radius: 14px;
         padding: 1.75rem 2rem;
     }
-    .newsletter h2 {
+    .reading h2 {
         margin: 0 0 0.4rem;
         font-size: 17px;
         font-weight: 500;
     }
-    .newsletter p {
+    .reading p {
         margin: 0 0 1rem;
         color: var(--mut);
         font-size: 13.5px;
-        max-width: 34rem;
     }
-    .newsletter form {
-        display: flex;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-    }
-    .newsletter input[type='email'] {
-        flex: 1 1 14rem;
-        min-height: 36px;
-        padding: 6px 10px;
-        border: 1px solid var(--brd);
-        border-radius: 8px;
-        background: var(--inputbg);
-        color: var(--bt-text);
-        caret-color: var(--bt-accent);
-        font: inherit;
+    .reading ul {
+        margin: 0;
+        padding-left: 1.1rem;
         font-size: 14px;
     }
-    .newsletter input[type='email']:hover {
-        border-color: var(--mut);
+    .reading li {
+        margin-bottom: 0.6rem;
+        color: var(--mut);
     }
-    .newsletter input[type='email']:focus-visible {
-        border-color: var(--bt-accent);
-        outline-offset: 0;
-    }
-    .newsletter input::placeholder {
-        color: var(--faint);
-    }
-    .newsletter button {
-        background: transparent;
-        border: 1px solid var(--bt-accent);
-        border-radius: 8px;
+    .reading li a {
         color: var(--acc-soft);
-        padding: 6px 18px;
-        font: inherit;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.15s;
+        text-decoration: none;
+        text-underline-offset: 3px;
     }
-    .newsletter button:hover {
-        background: color-mix(in srgb, var(--bt-accent) 14%, transparent);
+    .reading li a:hover {
+        text-decoration: underline;
+    }
+    .reading .authors {
+        color: var(--bt-text);
+    }
+    .reading .affiliate-note {
+        margin: 1rem 0 0;
+        font-size: 12px;
+        color: var(--faint);
     }
 
     /* — footer — */
