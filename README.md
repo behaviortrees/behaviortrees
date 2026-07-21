@@ -1,4 +1,8 @@
+<img src="logo.svg" alt="Behavior Trees logo" width="96" align="left">
+
 # Behavior Trees Editor
+
+<br clear="left">
 
 ![interface preview](preview.png)
 
