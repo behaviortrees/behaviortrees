@@ -1,5 +1,8 @@
 import { Tree } from '../../types';
 
+// Derived from behavior3editor's OrganizeManager (MIT, © 2014 Renato de
+// Pontes Pereira) — see LICENSE-MIT at the package root.
+//
 // Port of the old editor's OrganizeManager: leaves stack along the cross
 // axis at their depth, internal nodes center on their children, and the
 // whole layout is offset so the root keeps its current position.

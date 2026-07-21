@@ -4,6 +4,9 @@ import { DEFAULT_NODES } from './defaults';
 import { organizeTree } from './organize';
 import { deserializeProject } from './serializer';
 
+// Derived from behavior3editor's ExportManager/ImportManager (MIT, © 2014
+// Renato de Pontes Pereira) — see LICENSE-MIT at the package root.
+//
 // The behavior3 interchange format, as produced/consumed by the original
 // behavior3editor (see src/editor ExportManager.js / ImportManager.js in the
 // old app). This is the on-disk format for trees, projects and custom nodes —

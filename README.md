@@ -12,7 +12,7 @@ Originally based on [behavior3editor](https://github.com/behavior3/behavior3edit
 |------|------------|------------------|
 | `src/` | Classic editor (AngularJS + gulp) | [behaviortrees.com](https://www.behaviortrees.com) |
 | `site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) |
-| `behaviour-tree-editor/` | Next-gen editor (React + TypeScript + React Flow) | [new.behaviortrees.com](https://new.behaviortrees.com) |
+| `behavior-tree-editor/` | Next-gen editor (React + TypeScript + React Flow) | [new.behaviortrees.com](https://new.behaviortrees.com) |
 
 ## Features
 
@@ -28,6 +28,8 @@ Originally based on [behavior3editor](https://github.com/behavior3/behavior3edit
 ### Classic editor
 
 ```sh
+git clone https://github.com/behaviortrees/behaviortrees.git
+cd behaviortrees
 npm install
 npx bower install
 gulp serve    # live reload at http://127.0.0.1:8000
@@ -45,7 +47,7 @@ npm run dev
 ### React editor
 
 ```sh
-cd behaviour-tree-editor
+cd behavior-tree-editor
 pnpm install
 pnpm dev
 ```
@@ -56,4 +58,7 @@ pnpm dev
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Credit to the original [behavior3](https://github.com/behavior3) team for the editor this project grew from.
+- The classic editor and repo root are **MIT** — see [LICENSE](LICENSE), © 2014 Renato de Pontes Pereira.
+- The React editor (`behavior-tree-editor/`) is **AGPL-3.0** © Alan Hoskins, with portions derived from the MIT original — see [behavior-tree-editor/LICENSE](behavior-tree-editor/LICENSE) and [behavior-tree-editor/LICENSE-MIT](behavior-tree-editor/LICENSE-MIT).
+
+Credit to the original [behavior3](https://github.com/behavior3) team for the editor this project grew from.
