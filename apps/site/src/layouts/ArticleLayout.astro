@@ -50,7 +50,8 @@ const jsonLd = isArticle
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="shortcut icon" type="image/x-icon" href="/imgs/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/imgs/logo.svg" />
+    <link rel="alternate icon" type="image/x-icon" href="/imgs/favicon.ico" />
 
     <!-- Must run before any stylesheet so the first style resolution already
          sees the theme. Kept byte-identical with the editor app's index.html;
@@ -96,10 +97,15 @@ const jsonLd = isArticle
 <body>
     <header class="site-header">
         <nav>
-            <a class="wordmark" href="/learn/">behaviortrees<span>.com</span></a>
+            <a class="wordmark" href="/learn/">
+                <img src="/imgs/logo.svg" alt="" width="22" height="22" />
+                behavior<span>trees</span>
+            </a>
             <div class="nav-links">
-                <a href="/learn/">Learn</a>
-                <a class="cta" href="/">Open Editor</a>
+                <a href="/learn/">Home</a>
+                <a href="/editor">Editor</a>
+                <a href="/projects">Projects</a>
+                <a href="/settings">Settings</a>
                 <button
                     type="button"
                     id="theme-toggle"
@@ -292,11 +298,17 @@ const jsonLd = isArticle
         justify-content: space-between;
     }
     .wordmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
         font-weight: 500;
         font-size: 15px;
         text-decoration: none;
         color: var(--bt-text);
         letter-spacing: -0.01em;
+    }
+    .wordmark img {
+        border-radius: 5px;
     }
     .wordmark span {
         color: var(--acc-deep);

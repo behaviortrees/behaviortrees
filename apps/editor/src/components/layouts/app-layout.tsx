@@ -23,12 +23,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 		>
 			<header className="flex h-[54px] flex-none items-center gap-8 border-b border-divider px-6">
 				<Link to="/" className="flex items-center gap-3">
-					<div
-						className="grid h-[22px] w-[22px] place-items-center rounded-md border border-accent"
-						style={{ boxShadow: '0 0 10px var(--glow)' }}
-					>
-						<div className="h-2 w-2 rounded-[2px] bg-accent" />
-					</div>
+					<img src="/imgs/logo.svg" alt="" className="h-[22px] w-[22px] rounded-[5px]" />
 					<span className="text-[15px] font-medium tracking-[-0.01em]">
 						behavior<span className="text-accent">trees</span>
 					</span>
