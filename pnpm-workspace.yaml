@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+  # The classic gulp/bower editor is intentionally NOT a workspace member: it
+  # keeps its own npm lockfile (with the graceful-fs override) because the
+  # gulp 3 toolchain predates pnpm-style layouts. Never run pnpm in there.
+  - '!apps/editor-classic'

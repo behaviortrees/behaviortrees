@@ -46,7 +46,7 @@ pin them so they stay choices:
 
 - **Project-shaped example files were rejected.** `example-loader.tsx` required
   `kind === 'tree'` and threw on anything else, while `app.js:68-72` has always branched on
-  `data.trees`. Latent — all three files in `src/examples/` are tree-shaped — but it would
+  `data.trees`. Latent — all three files in `packages/examples/trees/` are tree-shaped — but it would
   have broken silently the moment a bundled example was added. The loader now mirrors
   `ImportManager.projectAsData`: merge the file's custom nodes and every tree into the open
   `Examples` project, then honour its `selectedTree`.

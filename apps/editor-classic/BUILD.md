@@ -18,13 +18,13 @@ To run the editor you will need the following softwares:
 
 ## Configuration
 
-Before building, you need to install some 3rd-party libraries. You need to run in console the following commands:
+Before building, you need to install some 3rd-party libraries. From `apps/editor-classic`, run:
 
-    npm install
+    npm install --ignore-scripts
 
 and:
 
-    bower install
+    npx bower install
 
 The former installs a bunch of NodeJS modules, which are used on the building system and some dependences of the desktop application. The last installs CSS and Javascript vendor libraries.
 

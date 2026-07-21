@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Builds the editor (gulp) and the content site (Astro), then merges both into
-# deploy/ as the complete behaviortrees.com static site:
+# Builds the classic editor (gulp) and the content site (Astro), then merges
+# both into deploy/ as the complete behaviortrees.com static site:
 #
-#   /            -> editor app (gulp build output)
+#   /            -> classic editor app (gulp build output)
 #   /learn/      -> content site (Astro output)
 #   /robots.txt, /sitemap*.xml
 #
 # Upload the deploy/ directory to your static host.
 #
-# Requirements: Node >= 16 for gulp (see "overrides" in package.json),
-# Node >= 20 for Astro. If you use nvm, this script picks versions itself.
+# Requirements: Node >= 16 for gulp (see "overrides" in
+# apps/editor-classic/package.json), Node >= 20 for Astro + pnpm. If you use
+# nvm, this script picks versions itself.
 
 set -euo pipefail
-cd "$(dirname "$0")"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
@@ -36,21 +38,23 @@ run_with_node() {
 }
 
 # gulp 3 toolchain: works on Node 14-16 (with the graceful-fs override in
-# package.json), breaks on Node >= 18 era removals (util.isRegExp etc).
-echo "==> Building editor (gulp)"
+# apps/editor-classic/package.json), breaks on Node >= 23.
+echo "==> Building classic editor (gulp)"
+cd apps/editor-classic
 [ -d node_modules ] || run_with_node 14 16 npm install --ignore-scripts --no-audit --no-fund
 [ -d bower_components ] || run_with_node 14 16 npx bower install --config.interactive=false
 run_with_node 14 16 ./node_modules/.bin/gulp build
+cd "$ROOT"
 
 echo "==> Building content site (Astro)"
-[ -d site/node_modules ] || (cd site && run_with_node 20 99 npm install --no-audit --no-fund)
-(cd site && run_with_node 20 99 npm run build)
+[ -d node_modules ] || run_with_node 20 99 pnpm install --frozen-lockfile
+run_with_node 20 99 pnpm exec turbo run build --filter=@behaviortrees/site
 
 echo "==> Assembling deploy/"
 rm -rf deploy
 mkdir -p deploy
-cp -R build/. deploy/
-cp -R site/dist/. deploy/
+cp -R apps/editor-classic/build/. deploy/
+cp -R apps/site/dist/. deploy/
 rm -f deploy/package.json deploy/desktop.js
 
 echo "==> Done. Contents of deploy/:"

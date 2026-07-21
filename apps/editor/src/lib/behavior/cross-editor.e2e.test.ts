@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { B3Tree, b3ToTree, projectToB3, treeToB3, b3ToProject } from './b3';
 import { DEFAULT_NODES } from './defaults';
@@ -10,7 +11,7 @@ import { Project } from '../../types';
 // re-exported through its ExportManager and compared.
 //
 // Requires the old editor to be built and served, plus a Chromium binary:
-//   ./build-deploy.sh && python3 -m http.server 8123 -d deploy
+//   (from the repo root) ./build-deploy.sh && python3 -m http.server 8123 -d deploy
 //   OLD_EDITOR_URL=http://127.0.0.1:8123 \
 //   CHROMIUM_PATH=~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium \
 //     npx vitest run cross-editor
@@ -19,7 +20,10 @@ import { Project } from '../../types';
 const OLD_EDITOR_URL = process.env.OLD_EDITOR_URL;
 const CHROMIUM_PATH = process.env.CHROMIUM_PATH;
 
-const EXAMPLES_DIR = join(__dirname, '../../../../src/examples');
+const EXAMPLES_DIR = join(
+  dirname(createRequire(import.meta.url).resolve('@behaviortrees/examples/package.json')),
+  'trees'
+);
 const load = (name: string): B3Tree =>
   JSON.parse(readFileSync(join(EXAMPLES_DIR, name), 'utf8'));
 

@@ -12,9 +12,11 @@ This is a modernized version of the Behavior3 Editor, reimplemented using modern
 - Zustand for state management
 - ReactFlow for canvas editor
 
+This app lives at `apps/editor` in a pnpm + Turborepo monorepo — run `pnpm install` at the repo root. Example trees come from the `@behaviortrees/examples` workspace package (`packages/examples/trees`).
+
 ## Build Commands
 
-- `pnpm install` - Install dependencies
+- `pnpm install` (at repo root) - Install dependencies
 - `pnpm run dev` - Run development server
 - `pnpm run build` - Build for production
 - `pnpm run lint` - Run ESLint on codebase
