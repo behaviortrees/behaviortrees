@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { B3Tree, b3ToTree, projectToB3, treeToB3, b3ToProject } from './b3';
 import { DEFAULT_NODES } from './defaults';
@@ -19,7 +20,10 @@ import { Project } from '../../types';
 const OLD_EDITOR_URL = process.env.OLD_EDITOR_URL;
 const CHROMIUM_PATH = process.env.CHROMIUM_PATH;
 
-const EXAMPLES_DIR = join(__dirname, '../../../../packages/examples/trees');
+const EXAMPLES_DIR = join(
+  dirname(createRequire(import.meta.url).resolve('@behaviortrees/examples/package.json')),
+  'trees'
+);
 const load = (name: string): B3Tree =>
   JSON.parse(readFileSync(join(EXAMPLES_DIR, name), 'utf8'));
 

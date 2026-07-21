@@ -1,16 +1,21 @@
 import { copyFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
+const require = createRequire(import.meta.url);
 
-// The example trees live in packages/examples (single source of truth, shared
-// with the classic editor). Serve them at /examples in dev and copy them into
-// dist/examples on build so /?example=<name> works everywhere.
-const EXAMPLES_DIR = join(HERE, '../packages/examples/trees');
+// The example trees live in @behaviortrees/examples (single source of truth,
+// shared with the classic editor). Serve them at /examples in dev and copy
+// them into dist/examples on build so /?example=<name> works everywhere.
+const EXAMPLES_DIR = join(
+	dirname(require.resolve('@behaviortrees/examples/package.json')),
+	'trees'
+);
 
 const examplesPlugin = (): Plugin => ({
 	name: 'shared-examples',
