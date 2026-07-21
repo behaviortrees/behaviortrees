@@ -36,10 +36,13 @@ dist
 .temp-dist
 build
 deploy
-site/dist
-src/vendor
+apps/editor-classic/src/vendor
 cache
 teste.py
+
+# Tool caches
+.turbo
+.astro
 
 ignore-*
 

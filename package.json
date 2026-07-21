@@ -1,0 +1,24 @@
+{
+    "name": "behaviortrees",
+    "private": true,
+    "version": "0.0.0",
+    "homepage": "https://www.behaviortrees.com",
+    "license": "MIT",
+    "bugs": "https://github.com/behaviortrees/behaviortrees/issues",
+    "repository": "github:behaviortrees/behaviortrees",
+    "packageManager": "pnpm@10.30.1",
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "build": "turbo run build",
+        "build:classic": "cd apps/editor-classic && ([ -d node_modules ] || npm install --ignore-scripts --no-audit --no-fund) && ([ -d bower_components ] || npx bower install --config.interactive=false) && ./node_modules/.bin/gulp build",
+        "build:all": "turbo run build build:classic",
+        "dev": "turbo run dev",
+        "lint": "turbo run lint",
+        "test": "turbo run test"
+    },
+    "devDependencies": {
+        "turbo": "^2.5.0"
+    }
+}

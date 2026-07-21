@@ -1,0 +1,28 @@
+{
+    "$schema": "https://turborepo.com/schema.json",
+    "tasks": {
+        "build": {
+            "dependsOn": ["^build"],
+            "outputs": ["dist/**"]
+        },
+        "dev": {
+            "cache": false,
+            "persistent": true
+        },
+        "lint": {},
+        "test": {
+            "env": ["CHROMIUM_PATH"]
+        },
+        "//#build:classic": {
+            "inputs": [
+                "apps/editor-classic/src/**",
+                "apps/editor-classic/gulpfile.js",
+                "apps/editor-classic/bower.json",
+                "apps/editor-classic/package.json",
+                "apps/editor-classic/package-lock.json",
+                "packages/examples/trees/*.json"
+            ],
+            "outputs": ["apps/editor-classic/build/**"]
+        }
+    }
+}
