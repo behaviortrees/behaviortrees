@@ -4,8 +4,8 @@
     "version": "0.0.0",
     "homepage": "https://www.behaviortrees.com",
     "license": "MIT",
-    "bugs": "https://github.com/alanhoskins/behaviortrees/issues",
-    "repository": "github:alanhoskins/behaviortrees",
+    "bugs": "https://github.com/behaviortrees/behaviortrees/issues",
+    "repository": "github:behaviortrees/behaviortrees",
     "packageManager": "pnpm@10.30.1",
     "engines": {
         "node": ">=20"
