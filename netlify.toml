@@ -2,10 +2,14 @@
 #
 # Overrides any Node version pinned in the Netlify UI (the site was pinned to
 # Node 8 from the original behavior3 era). Gulp 3 needs Node <= 22 (see the
-# graceful-fs override in package.json); Astro needs >= 20.
+# graceful-fs override in apps/editor-classic/package.json); Astro needs >= 20.
 #
-# NPM_FLAGS keeps Netlify's automatic `npm install` from running the ancient
-# electron-prebuilt postinstall script, which no longer works.
+# With pnpm-lock.yaml at the repo root, Netlify's automatic install runs
+# `pnpm install` (version pinned via "packageManager" in package.json). The
+# classic editor is installed separately inside build-deploy.sh with
+# `npm install --ignore-scripts`, which keeps the ancient electron-prebuilt
+# postinstall script from running. NPM_FLAGS is kept in case anything falls
+# back to npm.
 
 [build]
   command = "bash build-deploy.sh"

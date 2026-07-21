@@ -12,11 +12,16 @@ Originally based on [behavior3editor](https://github.com/behavior3/behavior3edit
 
 ## What's in this repo
 
+A pnpm + [Turborepo](https://turborepo.com) monorepo:
+
 | Path | What it is | Where it deploys |
 |------|------------|------------------|
-| `src/` | Classic editor (AngularJS + gulp) | [behaviortrees.com](https://www.behaviortrees.com) |
-| `site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) |
-| `behavior-tree-editor/` | Next-gen editor (React + TypeScript + React Flow) | [new.behaviortrees.com](https://new.behaviortrees.com) |
+| `apps/editor/` | Next-gen editor (React + TypeScript + React Flow) | [new.behaviortrees.com](https://new.behaviortrees.com) |
+| `apps/editor-classic/` | Classic editor (AngularJS + gulp) | [behaviortrees.com](https://www.behaviortrees.com) |
+| `apps/site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) (also served at [new.behaviortrees.com/learn](https://new.behaviortrees.com/learn/)) |
+| `packages/examples/` | Shared example trees consumed by both editors | bundled into both editors |
+
+`apps/editor-classic` is intentionally **not** a workspace member — its gulp 3 toolchain keeps its own npm lockfile. Never run pnpm inside it.
 
 ## Features
 
@@ -29,40 +34,36 @@ Originally based on [behavior3editor](https://github.com/behavior3/behavior3edit
 
 ## Development
 
-### Classic editor
-
 ```sh
 git clone https://github.com/behaviortrees/behaviortrees.git
 cd behaviortrees
-npm install
-npx bower install
-gulp serve    # live reload at http://127.0.0.1:8000
-gulp build    # production build
-```
-
-### Guides site
-
-```sh
-cd site
-npm install
-npm run dev
-```
-
-### React editor
-
-```sh
-cd behavior-tree-editor
 pnpm install
-pnpm dev
+
+pnpm dev --filter @behaviortrees/editor   # React editor (Vite)
+pnpm dev --filter @behaviortrees/site     # guides site (Astro)
+pnpm build                                # build editor + site via Turborepo
+pnpm test                                 # editor test suite
+```
+
+### Classic editor
+
+Uses Node <= 22 (see `.nvmrc`) and its own npm toolchain:
+
+```sh
+pnpm build:classic          # npm install + bower install + gulp build, from the repo root
+# or, inside apps/editor-classic:
+npm install --ignore-scripts
+npx bower install
+gulp serve                  # live reload at http://127.0.0.1:8000
 ```
 
 ## Deployment
 
-`build-deploy.sh` builds the classic editor and the guides site, merging both into `deploy/` as the complete behaviortrees.com static site (Netlify runs this via `netlify.toml`). The React editor deploys independently through its own `vercel.json`.
+`build-deploy.sh` builds the classic editor and the guides site, merging both into `deploy/` as the complete behaviortrees.com static site (Netlify runs this via `netlify.toml`). The React editor deploys through `apps/editor/vercel.json` (Vercel root directory: `apps/editor`); its build also bundles the guides site so `/learn` stays available on new.behaviortrees.com independently of the Netlify deploy.
 
 ## License
 
 - The classic editor and repo root are **MIT** — see [LICENSE](LICENSE), © 2014 Renato de Pontes Pereira.
-- The React editor (`behavior-tree-editor/`) is **AGPL-3.0** © Alan Hoskins, with portions derived from the MIT original — see [behavior-tree-editor/LICENSE](behavior-tree-editor/LICENSE) and [behavior-tree-editor/LICENSE-MIT](behavior-tree-editor/LICENSE-MIT).
+- The React editor (`apps/editor/`) is **AGPL-3.0** © Alan Hoskins, with portions derived from the MIT original — see [apps/editor/LICENSE](apps/editor/LICENSE) and [apps/editor/LICENSE-MIT](apps/editor/LICENSE-MIT).
 
 Credit to the original [behavior3](https://github.com/behavior3) team for the editor this project grew from.

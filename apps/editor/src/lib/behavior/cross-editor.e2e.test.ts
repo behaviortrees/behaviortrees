@@ -11,7 +11,7 @@ import { Project } from '../../types';
 // re-exported through its ExportManager and compared.
 //
 // Requires the old editor to be built and served, plus a Chromium binary:
-//   ./build-deploy.sh && python3 -m http.server 8123 -d deploy
+//   (from the repo root) ./build-deploy.sh && python3 -m http.server 8123 -d deploy
 //   OLD_EDITOR_URL=http://127.0.0.1:8123 \
 //   CHROMIUM_PATH=~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium \
 //     npx vitest run cross-editor
