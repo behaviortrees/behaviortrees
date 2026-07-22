@@ -62,6 +62,47 @@ export async function upsertProject(
   return rows.length > 0;
 }
 
+export type AdminProjectRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  updated_at: string;
+  created_at: string;
+};
+
+export async function listLatestProjectsAllUsers(limit = 20): Promise<AdminProjectRow[]> {
+  const rows = await sql()`
+    select id, user_id, name, updated_at, created_at
+    from projects
+    where deleted_at is null
+    order by updated_at desc
+    limit ${limit}
+  `;
+  return rows.map((row) => ({
+    id: row.id as string,
+    user_id: row.user_id as string,
+    name: row.name as string,
+    updated_at: new Date(row.updated_at as string).toISOString(),
+    created_at: new Date(row.created_at as string).toISOString(),
+  }));
+}
+
+export async function getProjectTotals(): Promise<{
+  totalActive: number;
+  totalUsers: number;
+}> {
+  const rows = await sql()`
+    select count(*)::int as total_active,
+           count(distinct user_id)::int as total_users
+    from projects
+    where deleted_at is null
+  `;
+  return {
+    totalActive: rows[0].total_active as number,
+    totalUsers: rows[0].total_users as number,
+  };
+}
+
 export async function softDeleteProject(
   userId: string,
   id: string,

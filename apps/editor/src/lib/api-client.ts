@@ -85,3 +85,46 @@ export async function deleteProjectRemote(id: string, deletedAt: string): Promis
     body: JSON.stringify({ deletedAt }),
   });
 }
+
+// Admin dashboard (mirrors AdminDashboardResponse in api/admin/dashboard.ts)
+
+export type SectionError = { error: string };
+
+export type PlausibleSection = {
+  range30d: { visitors: number; pageviews: number; visitDuration: number; bounceRate: number };
+  today: { visitors: number; pageviews: number };
+  timeseries: { date: string; visitors: number; pageviews: number }[];
+  topPages: { page: string; visitors: number }[];
+  topSources: { source: string; visitors: number }[];
+};
+
+export type PostHogSection = {
+  events: { event: string; editor: string; count: number }[];
+  daily: { date: string; count: number }[];
+};
+
+export type ProjectsSection = {
+  totalActive: number;
+  totalUsers: number;
+  latest: {
+    id: string;
+    userId: string;
+    userName: string | null;
+    userEmail: string | null;
+    name: string;
+    updatedAt: string;
+    createdAt: string;
+  }[];
+};
+
+export type AdminDashboardResponse = {
+  generatedAt: string;
+  cached: boolean;
+  plausible: PlausibleSection | SectionError;
+  posthog: PostHogSection | SectionError;
+  projects: ProjectsSection | SectionError;
+};
+
+export async function fetchAdminDashboard(fresh = false): Promise<AdminDashboardResponse> {
+  return request<AdminDashboardResponse>(`/api/admin/dashboard${fresh ? '?fresh=1' : ''}`);
+}

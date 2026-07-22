@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import AuthControls from '../auth/auth-controls';
+import AdminNavLink from '../auth/admin-nav-link';
 import { isAnalyticsEnabled } from '../../lib/analytics';
 import { CLOUD_ENABLED } from '../../lib/auth';
 
@@ -61,6 +62,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 								Learn
 							</a>
 						</li>
+						{CLOUD_ENABLED && <AdminNavLink />}
 					</ul>
 				</nav>
 

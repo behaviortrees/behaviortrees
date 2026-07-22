@@ -9,6 +9,7 @@ import HomePage from './pages/home/home-page';
 import EditorPage from './pages/editor/editor-page';
 import ProjectsPage from './pages/projects/projects-page';
 import SettingsPage from './pages/settings/settings-page';
+import AdminPage from './pages/admin/admin-page';
 
 import './index.css';
 
@@ -34,6 +35,7 @@ function App() {
 					<Route path="/editor" element={<EditorPage />} />
 					<Route path="/projects" element={<ProjectsPage />} />
 					<Route path="/settings" element={<SettingsPage />} />
+					<Route path="/admin" element={<AdminPage />} />
 				</Routes>
 			</AppLayout>
 		</BrowserRouter>
