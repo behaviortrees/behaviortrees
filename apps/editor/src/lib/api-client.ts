@@ -32,9 +32,14 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!getToken) throw new ApiError(401, 'Not signed in');
-  const token = await getToken();
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  tokenGetter?: TokenGetter
+): Promise<T> {
+  const getter = tokenGetter ?? getToken;
+  if (!getter) throw new ApiError(401, 'Not signed in');
+  const token = await getter();
   if (!token) throw new ApiError(401, 'Not signed in');
 
   const response = await fetch(path, {
@@ -125,6 +130,15 @@ export type AdminDashboardResponse = {
   projects: ProjectsSection | SectionError;
 };
 
-export async function fetchAdminDashboard(fresh = false): Promise<AdminDashboardResponse> {
-  return request<AdminDashboardResponse>(`/api/admin/dashboard${fresh ? '?fresh=1' : ''}`);
+// Takes its own token getter: the admin page fetches straight from Clerk's
+// useAuth() so it doesn't race the sync engine's setTokenGetter registration.
+export async function fetchAdminDashboard(
+  fresh: boolean,
+  tokenGetter: TokenGetter
+): Promise<AdminDashboardResponse> {
+  return request<AdminDashboardResponse>(
+    `/api/admin/dashboard${fresh ? '?fresh=1' : ''}`,
+    undefined,
+    tokenGetter
+  );
 }

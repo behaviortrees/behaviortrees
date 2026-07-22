@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
+import { CLOUD_ENABLED } from '../../lib/auth';
 import {
   AdminDashboardResponse,
   ApiError,
@@ -216,32 +218,43 @@ const LatestProjectsCard: React.FC<{ data: ProjectsSection | SectionError }> = (
   </div>
 );
 
-const AdminPage: React.FC = () => {
+// Split so Clerk hooks only run when the provider is mounted (CLOUD_ENABLED)
+const AdminDashboard: React.FC = () => {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const [data, setData] = useState<AdminDashboardResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async (fresh: boolean) => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await fetchAdminDashboard(fresh));
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError('Sign in as the admin to view this page.');
-      } else if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
-        setError('Not authorized.');
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+  const load = useCallback(
+    async (fresh: boolean) => {
+      setLoading(true);
+      setError(null);
+      try {
+        setData(await fetchAdminDashboard(fresh, () => getToken()));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          setError('Sign in as the admin to view this page.');
+        } else if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
+          setError('Not authorized.');
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getToken]
+  );
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setError('Sign in as the admin to view this page.');
+      setLoading(false);
+      return;
+    }
     load(false);
-  }, [load]);
+  }, [isLoaded, isSignedIn, load]);
 
   if (error) {
     return (
@@ -315,6 +328,20 @@ const AdminPage: React.FC = () => {
       <LatestProjectsCard data={data.projects} />
     </div>
   );
+};
+
+const AdminPage: React.FC = () => {
+  if (!CLOUD_ENABLED) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="card text-center">
+          <h2 className="text-xl font-medium mb-2">Admin</h2>
+          <p className="text-muted">Cloud features are not configured.</p>
+        </div>
+      </div>
+    );
+  }
+  return <AdminDashboard />;
 };
 
 export default AdminPage;
