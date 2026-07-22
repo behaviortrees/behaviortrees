@@ -3,7 +3,8 @@
     "tasks": {
         "build": {
             "dependsOn": ["^build"],
-            "outputs": ["dist/**"]
+            "outputs": ["dist/**"],
+            "env": ["VITE_CLERK_PUBLISHABLE_KEY"]
         },
         "dev": {
             "cache": false,
