@@ -38,8 +38,13 @@ const AuthControls: React.FC = () => (
   <div className="flex items-center gap-3">
     <SignedOut>
       <SignInButton mode="modal">
-        <Button variant="outline" size="sm" className="h-7 text-[13px]">
-          Sign in to sync
+        <Button
+          size="sm"
+          className="h-7 gap-1.5 rounded-full px-3.5 text-[13px]"
+          title="Sync your projects across machines"
+        >
+          <Cloud size={14} />
+          Sign in
         </Button>
       </SignInButton>
     </SignedOut>
