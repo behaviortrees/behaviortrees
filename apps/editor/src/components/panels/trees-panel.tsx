@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Pencil, Plus, Trash2, Workflow } from 'lucide-react';
+import { Import, Pencil, Plus, Trash2, Workflow } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { track } from '../../lib/analytics';
+import ImportModal from '../modals/import-modal';
 
 const TreesPanel: React.FC = () => {
   const project = useProjectStore(state => state.project);
@@ -13,6 +14,7 @@ const TreesPanel: React.FC = () => {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [importOpen, setImportOpen] = useState(false);
 
   if (!project) {
     return (
@@ -58,6 +60,15 @@ const TreesPanel: React.FC = () => {
           <Plus className="h-5 w-5" />
           New Tree
         </button>
+        <button
+          onClick={() => setImportOpen(true)}
+          className="w-full py-1.5 px-4 text-[13px] text-muted rounded-md hover:text-accent-soft hover:bg-fg/5 transition flex items-center justify-center gap-2"
+          title="Add an example tree, paste JSON, or import a file"
+        >
+          <Import className="h-4 w-4" />
+          Import or example…
+        </button>
+        <ImportModal open={importOpen} onOpenChange={setImportOpen} />
       </div>
 
       <div className="px-2 flex-1 overflow-auto">

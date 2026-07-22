@@ -7,10 +7,10 @@ import {
   Undo2,
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
-import { b3ToTree, parseImportedJson } from '../../lib/behavior/b3';
 import { track } from '../../lib/analytics';
 import { toast } from 'sonner';
 import ExportModal, { ExportType } from '../modals/export-modal';
+import ImportModal from '../modals/import-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +36,9 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
   const [layout, updateLayout] = usePanelLayout();
   const [exportOpen, setExportOpen] = useState(false);
   const [exportType, setExportType] = useState<ExportType>('project');
+  const [importOpen, setImportOpen] = useState(false);
   const project = useProjectStore(state => state.project);
   const saveProjectStore = useProjectStore(state => state.saveProject);
-  const loadProject = useProjectStore(state => state.loadProject);
-  const addImportedTree = useProjectStore(state => state.addImportedTree);
-  const addNodes = useProjectStore(state => state.addNodes);
   const undo = useProjectStore(state => state.undo);
   const redo = useProjectStore(state => state.redo);
   const organize = useProjectStore(state => state.organize);
@@ -107,53 +105,7 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
   };
 
   // Handle import button click - trigger file input
-  const handleImport = () => {
-    document.getElementById('bt-file-import')?.click();
-  };
-
-  // Handle file selection
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string);
-        const imported = parseImportedJson(json);
-
-        if (imported.kind === 'project') {
-          loadProject(imported.project);
-          track('import', { type: 'project' });
-          toast.success('Project imported');
-        } else if (imported.kind === 'tree') {
-          if (!project) {
-            toast.error('Open a project before importing a tree');
-            return;
-          }
-          const { tree, nodes } = b3ToTree(imported.tree, project.nodes);
-          addImportedTree(tree, nodes);
-          track('import', { type: 'tree' });
-          toast.success(`Tree "${tree.title}" imported`);
-        } else {
-          if (!project) {
-            toast.error('Open a project before importing nodes');
-            return;
-          }
-          addNodes(imported.nodes);
-          track('import', { type: 'nodes' });
-          toast.success(`${Object.keys(imported.nodes).length} node(s) imported`);
-        }
-      } catch (error) {
-        console.error('Failed to import file', error);
-        toast.error('Invalid behavior tree file');
-      }
-    };
-    reader.readAsText(file);
-
-    // Reset the file input
-    e.target.value = '';
-  };
+  const handleImport = () => setImportOpen(true);
 
   if (!project) {
     return (
@@ -216,6 +168,7 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
         onOpenChange={setExportOpen}
         exportType={exportType}
       />
+      <ImportModal open={importOpen} onOpenChange={setImportOpen} />
 
       {/* Editor Toolbar */}
       <div className="flex h-[50px] flex-none items-center justify-between border-b border-divider px-6">
@@ -286,13 +239,6 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <input
-            type="file"
-            id="bt-file-import"
-            style={{ display: 'none' }}
-            onChange={handleFileImport}
-            accept=".json"
-          />
         </div>
       </div>
 
