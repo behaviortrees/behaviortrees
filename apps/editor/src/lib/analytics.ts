@@ -28,8 +28,7 @@ export function initAnalytics(): void {
       autocapture: false,
       capture_pageview: 'history_change',
       capture_pageleave: false,
-      disable_session_recording: true,
-      disable_surveys: true,
+      disable_surveys: false,
     });
     posthog.register({ editor: 'react' });
     if (debug) posthog.debug(true);
@@ -39,10 +38,32 @@ export function initAnalytics(): void {
   }
 }
 
+export function isAnalyticsEnabled(): boolean {
+  return enabled;
+}
+
 export function track(event: string, props?: Record<string, unknown>): void {
   if (!enabled) return;
   try {
     posthog.capture(event, props);
+  } catch {
+    // no-op
+  }
+}
+
+export function identifyUser(id: string, props?: Record<string, unknown>): void {
+  if (!enabled) return;
+  try {
+    posthog.identify(id, props);
+  } catch {
+    // no-op
+  }
+}
+
+export function resetUser(): void {
+  if (!enabled) return;
+  try {
+    posthog.reset();
   } catch {
     // no-op
   }

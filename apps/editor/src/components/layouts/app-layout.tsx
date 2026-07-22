@@ -1,6 +1,8 @@
 import React, { ReactNode } from 'react';
+import { MessageSquare } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import AuthControls from '../auth/auth-controls';
+import { isAnalyticsEnabled } from '../../lib/analytics';
 import { CLOUD_ENABLED } from '../../lib/auth';
 
 type AppLayoutProps = {
@@ -62,11 +64,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 					</ul>
 				</nav>
 
-				{CLOUD_ENABLED && (
-					<div className="ml-auto">
-						<AuthControls />
-					</div>
-				)}
+				<div className="ml-auto flex items-center gap-5">
+					{isAnalyticsEnabled() && (
+						// The PostHog survey attaches to this class and opens on click
+						<button
+							type="button"
+							className="bt-feedback-button flex cursor-pointer items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-accent-soft"
+						>
+							<MessageSquare className="h-3.5 w-3.5" />
+							Feedback
+						</button>
+					)}
+					{CLOUD_ENABLED && <AuthControls />}
+				</div>
 			</header>
 
 			{isEditor ? (
