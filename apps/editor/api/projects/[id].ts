@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireUser } from '../_lib/auth';
-import { getProject, softDeleteProject, upsertProject } from '../_lib/db';
-import { MAX_PAYLOAD_BYTES, validateProjectPayload } from '../_lib/validate';
+import { requireUser } from '../_lib/auth.js';
+import { getProject, softDeleteProject, upsertProject } from '../_lib/db.js';
+import { MAX_PAYLOAD_BYTES, validateProjectPayload } from '../_lib/validate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userId = await requireUser(req, res);

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireUser } from '../_lib/auth';
-import { listProjects } from '../_lib/db';
+import { requireUser } from '../_lib/auth.js';
+import { listProjects } from '../_lib/db.js';
 
 // GET /api/projects — metadata only (the sync diff endpoint). Full payloads
 // are fetched per project via /api/projects/:id.
