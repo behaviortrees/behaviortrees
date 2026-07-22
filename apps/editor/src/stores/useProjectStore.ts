@@ -5,12 +5,13 @@ import { Block, Connection, Node, Project, Tree } from '../types';
 import { DEFAULT_NODES } from '../lib/behavior/defaults';
 import { organizeTree, TreeLayout } from '../lib/behavior/organize';
 import { parseImportedJson, projectToB3 } from '../lib/behavior/b3';
-
-const PROJECT_KEY_PREFIX = 'bt-project-';
-const CURRENT_PROJECT_KEY = 'bt-current-project';
-
-const storage = (): Storage | null =>
-  typeof localStorage === 'undefined' ? null : localStorage;
+import {
+  clearCurrentProjectId,
+  getCurrentProjectId,
+  readLocalProject,
+  setCurrentProjectId,
+  writeLocalProject,
+} from '../lib/storage/local-projects';
 
 type Clipboard = {
   blocks: Block[];
@@ -191,7 +192,7 @@ export const useProjectStore = create<ProjectState>()(
         state.redoStack = [];
         state.clipboard = null;
       });
-      storage()?.removeItem(CURRENT_PROJECT_KEY);
+      clearCurrentProjectId();
     },
     
     createTree: (title, description) => {
@@ -613,13 +614,11 @@ export const useProjectStore = create<ProjectState>()(
     
     saveProject: () => {
       const { project } = get();
-      const store = storage();
-      if (!project || !store) return false;
+      if (!project) return false;
 
       try {
-        const serialized = projectToB3(project);
-        store.setItem(`${PROJECT_KEY_PREFIX}${project.id}`, JSON.stringify(serialized));
-        store.setItem(CURRENT_PROJECT_KEY, project.id);
+        writeLocalProject(projectToB3(project));
+        setCurrentProjectId(project.id);
         return true;
       } catch (error) {
         console.error('Error saving project', error);
@@ -635,21 +634,20 @@ export const useProjectStore = create<ProjectState>()(
         state.clipboard = null;
         return state; // Explicitly return state to satisfy TypeScript
       });
-      storage()?.setItem(CURRENT_PROJECT_KEY, projectData.id);
+      setCurrentProjectId(projectData.id);
     },
 
     restoreLastProject: () => {
-      const store = storage();
-      if (!store || get().project) return false;
+      if (get().project) return false;
 
-      const id = store.getItem(CURRENT_PROJECT_KEY);
+      const id = getCurrentProjectId();
       if (!id) return false;
 
-      const raw = store.getItem(`${PROJECT_KEY_PREFIX}${id}`);
+      const raw = readLocalProject(id);
       if (!raw) return false;
 
       try {
-        const imported = parseImportedJson(JSON.parse(raw));
+        const imported = parseImportedJson(raw);
         if (imported.kind !== 'project') return false;
         get().loadProject(imported.project);
         return true;

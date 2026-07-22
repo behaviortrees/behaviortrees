@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { CLOUD_ENABLED } from '../../lib/auth';
 import { useProjectStore } from '../../stores/useProjectStore';
 
 const HomePage: React.FC = () => {
@@ -47,7 +48,9 @@ const HomePage: React.FC = () => {
 						</li>
 						<li className="flex items-start">
 							<span className="mr-2 text-accent-soft">•</span>
-							Save and share your projects
+							{CLOUD_ENABLED
+								? 'No account needed — everything saves in your browser. Sign in only if you want your projects synced across machines.'
+								: 'No account needed — everything saves in your browser'}
 						</li>
 					</ul>
 

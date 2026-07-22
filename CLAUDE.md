@@ -24,5 +24,5 @@ pnpm + Turborepo monorepo:
 
 ## Deployment
 
-- Netlify (behaviortrees.com): `netlify.toml` → `build-deploy.sh` → classic editor at `/`, Astro site at `/learn/`.
-- Vercel (new.behaviortrees.com): root directory `apps/editor`, `apps/editor/vercel.json`. The Vercel build must always bundle the Astro site into `dist/` so `/learn` survives independently of the Netlify deploy — do not remove that copy step.
+- Vercel (www.behaviortrees.com, the main site): root directory `apps/editor`, `apps/editor/vercel.json`. Serves the React editor, the Astro site at `/learn/`, and the serverless sync API at `/api/`. The Vercel build must always bundle the Astro site into `dist/` so `/learn` survives independently of the Netlify deploy — do not remove that copy step. new.behaviortrees.com redirects here.
+- Netlify (old.behaviortrees.com): `netlify.toml` → `build-deploy.sh` → classic editor at `/`, Astro site at `/learn/`.

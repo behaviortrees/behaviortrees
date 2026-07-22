@@ -2,7 +2,7 @@ import posthog from 'posthog-js';
 
 // Public project API key — safe to commit (PostHog keys are write-only).
 const POSTHOG_KEY = 'phc_zJzYsJvv7qpNZgQxCqVP2ksqB2YNd7eBvFD9YtjvDZ2Q';
-const PROD_HOSTS = ['new.behaviortrees.com'];
+const PROD_HOSTS = ['www.behaviortrees.com', 'behaviortrees.com'];
 
 function debugEnabled(): boolean {
   try {

@@ -2,7 +2,8 @@ import { copyFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, Plugin } from 'vite';
+import { Plugin } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -46,4 +47,17 @@ const examplesPlugin = (): Plugin => ({
 
 export default defineConfig({
 	plugins: [react(), tailwindcss(), examplesPlugin()],
+	server: {
+		// The sync API runs as Vercel functions; in dev, run `vercel dev --listen
+		// 3000` alongside vite so /api hits real functions while keeping HMR.
+		proxy: {
+			'/api': 'http://localhost:3000',
+		},
+	},
+	test: {
+		// Tests always run the local-only app: without this, a filled-in
+		// .env.local flips CLOUD_ENABLED and App renders Clerk components
+		// that need a provider only main.tsx supplies.
+		env: { VITE_CLERK_PUBLISHABLE_KEY: '' },
+	},
 });

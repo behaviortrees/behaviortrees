@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Project } from '../../types';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToProject, parseImportedJson, projectToB3 } from '../../lib/behavior/b3';
+import {
+  listLocalProjects,
+  removeLocalProject,
+  writeLocalProject,
+} from '../../lib/storage/local-projects';
+import { useSyncStore } from '../../lib/storage/cloud-sync';
 import { track } from '../../lib/analytics';
 import { Button } from '../../components/ui/button';
 import { Plus, Download, Trash, FolderOpen, Pencil, X } from 'lucide-react';
@@ -20,61 +27,47 @@ const ProjectsPage: React.FC = () => {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   
-  // Load projects from localStorage
-  const [projects, setProjects] = useState<any[]>([]);
-  
+  // Load projects from local storage; re-read when cloud sync changes it
+  const [projects, setProjects] = useState<Project[]>([]);
+  const localRevision = useSyncStore(state => state.localRevision);
+
   useEffect(() => {
-    // Get all projects from localStorage
     const loadedProjects = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('bt-project-')) {
-        try {
-          const raw = JSON.parse(localStorage.getItem(key) || '');
-          const imported = parseImportedJson(raw);
-          if (imported.kind === 'project') {
-            loadedProjects.push(imported.project);
-          }
-        } catch (e) {
-          console.error('Error parsing project from localStorage:', e);
+    for (const raw of listLocalProjects()) {
+      try {
+        const imported = parseImportedJson(raw);
+        if (imported.kind === 'project') {
+          loadedProjects.push(imported.project);
         }
+      } catch (e) {
+        console.error('Error parsing stored project:', e);
       }
     }
-    
+
     // If no projects in localStorage but we have a current project, use that
     if (loadedProjects.length === 0 && project) {
       setProjects([project]);
     } else {
       setProjects(loadedProjects);
     }
-  }, [project]);
+  }, [project, localRevision]);
 
   const handleCreateProject = () => {
     if (projectName.trim() === '') return;
     
+    // createProject persists via the store's saveProject
     createProject(projectName, projectDescription);
     track('project_created');
+    toast.success('Project created successfully');
 
-    // Get the created project
-    const newProject = useProjectStore.getState().project;
-    if (newProject) {
-      // Save to localStorage
-      try {
-        const serialized = projectToB3(newProject);
-        localStorage.setItem(`bt-project-${newProject.id}`, JSON.stringify(serialized));
-        toast.success('Project created successfully');
-      } catch (error) {
-        console.error('Error saving new project:', error);
-      }
-    }
-    
+
     setProjectName('');
     setProjectDescription('');
     setIsCreating(false);
     navigate('/editor');
   };
 
-  const handleExportProject = (project: any) => {
+  const handleExportProject = (project: Project) => {
     const serialized = projectToB3(project);
     const dataStr = JSON.stringify(serialized, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -86,7 +79,7 @@ const ProjectsPage: React.FC = () => {
     linkElement.click();
   };
 
-  const commitRename = (target: any) => {
+  const commitRename = (target: Project) => {
     const name = renameValue.trim();
     setRenamingId(null);
     if (!name || name === target.name) return;
@@ -98,7 +91,7 @@ const ProjectsPage: React.FC = () => {
       // Closed project: rewrite its stored payload directly
       try {
         const updated = { ...target, name, updatedAt: new Date().toISOString() };
-        localStorage.setItem(`bt-project-${target.id}`, JSON.stringify(projectToB3(updated)));
+        writeLocalProject(projectToB3(updated));
       } catch (error) {
         console.error('Error renaming project:', error);
         toast.error('Failed to rename project');
@@ -283,7 +276,7 @@ const ProjectsPage: React.FC = () => {
                     className="text-danger-soft hover:bg-danger/10"
                     onClick={() => {
                       if (!confirm(`Delete project "${item.name}"?`)) return;
-                      localStorage.removeItem(`bt-project-${item.id}`);
+                      removeLocalProject(item.id);
                       if (project?.id === item.id) {
                         closeProject();
                       }

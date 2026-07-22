@@ -47,3 +47,4 @@ teste.py
 ignore-*
 
 **/.claude/settings.local.json
+.vercel

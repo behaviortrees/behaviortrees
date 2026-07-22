@@ -1,5 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import AuthControls from '../auth/auth-controls';
+import { CLOUD_ENABLED } from '../../lib/auth';
 
 type AppLayoutProps = {
 	children: ReactNode;
@@ -59,6 +61,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 						</li>
 					</ul>
 				</nav>
+
+				{CLOUD_ENABLED && (
+					<div className="ml-auto">
+						<AuthControls />
+					</div>
+				)}
 			</header>
 
 			{isEditor ? (
