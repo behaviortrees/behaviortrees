@@ -16,8 +16,8 @@ const PrivacyPage: React.FC = () => (
       <section>
         <h2 className="mb-2 text-xl font-medium text-fg">Product analytics</h2>
         <p>
-          We use Plausible for aggregate website traffic and PostHog for product events,
-          retention, feedback surveys, and masked session replay. PostHog stores a
+          We use PostHog for aggregate website traffic, product events, retention,
+          feedback surveys, and masked session replay. PostHog stores a
           first-party identifier in local storage so we can understand repeat usage. We
           do not intentionally send project names, node names, tree contents, email
           addresses, or free-form project data in product events.

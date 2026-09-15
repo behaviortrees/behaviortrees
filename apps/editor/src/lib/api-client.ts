@@ -95,7 +95,7 @@ export async function deleteProjectRemote(id: string, deletedAt: string): Promis
 
 export type SectionError = { error: string };
 
-export type PlausibleSection = {
+export type TrafficSection = {
   range30d: { visitors: number; pageviews: number; visitDuration: number; bounceRate: number };
   today: { visitors: number; pageviews: number };
   timeseries: { date: string; visitors: number; pageviews: number }[];
@@ -146,7 +146,7 @@ export type ProjectsSection = {
 export type AdminDashboardResponse = {
   generatedAt: string;
   cached: boolean;
-  plausible: PlausibleSection | SectionError;
+  traffic: TrafficSection | SectionError;
   posthog: PostHogSection | SectionError;
   projects: ProjectsSection | SectionError;
   interests: CommercialInterestsSection | SectionError;

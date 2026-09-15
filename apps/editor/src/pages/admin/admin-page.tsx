@@ -6,10 +6,10 @@ import {
   AdminDashboardResponse,
   ApiError,
   CommercialInterestsSection,
-  PlausibleSection,
   PostHogSection,
   ProjectsSection,
   SectionError,
+  TrafficSection,
   fetchAdminDashboard,
 } from '../../lib/api-client';
 import { Button } from '../../components/ui/button';
@@ -84,11 +84,11 @@ const RankedTable: React.FC<{
   </div>
 );
 
-const TrafficCard: React.FC<{ data: PlausibleSection | SectionError }> = ({ data }) => (
+const TrafficCard: React.FC<{ data: TrafficSection | SectionError }> = ({ data }) => (
   <div className="card">
-    <h2 className="text-xl font-medium mb-4">Traffic (Plausible, last 30 days)</h2>
+    <h2 className="text-xl font-medium mb-4">Traffic (PostHog pageviews, last 30 days)</h2>
     {isSectionError(data) ? (
-      <SectionErrorBox source="Plausible" error={data.error} />
+      <SectionErrorBox source="traffic" error={data.error} />
     ) : (
       <div className="space-y-6">
         <BarList
@@ -385,7 +385,7 @@ const AdminDashboard: React.FC = () => {
 
   if (!data) return null;
 
-  const plausible = data.plausible;
+  const traffic = data.traffic;
   const projects = data.projects;
   const posthog = data.posthog;
   const interests = data.interests;
@@ -417,15 +417,15 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
         <StatTile
           label="Visitors (30d)"
-          value={isSectionError(plausible) ? '—' : formatNumber(plausible.range30d.visitors)}
+          value={isSectionError(traffic) ? '—' : formatNumber(traffic.range30d.visitors)}
         />
         <StatTile
           label="Pageviews (30d)"
-          value={isSectionError(plausible) ? '—' : formatNumber(plausible.range30d.pageviews)}
+          value={isSectionError(traffic) ? '—' : formatNumber(traffic.range30d.pageviews)}
         />
         <StatTile
           label="Visitors today"
-          value={isSectionError(plausible) ? '—' : formatNumber(plausible.today.visitors)}
+          value={isSectionError(traffic) ? '—' : formatNumber(traffic.today.visitors)}
         />
         <StatTile
           label="Active projects"
@@ -449,7 +449,7 @@ const AdminDashboard: React.FC = () => {
         />
       </div>
 
-      <TrafficCard data={data.plausible} />
+      <TrafficCard data={data.traffic} />
       <EventsCard data={data.posthog} />
       <FunnelCard data={data.posthog} />
       <RetentionCard data={data.posthog} />

@@ -5,8 +5,6 @@
   "rewrites": [
     { "source": "/ingest/static/:path(.*)", "destination": "https://us-assets.i.posthog.com/static/:path*" },
     { "source": "/ingest/:path(.*)", "destination": "https://us.i.posthog.com/:path*" },
-    { "source": "/pl/js/script.js", "destination": "https://plausible.io/js/pa-tiD5_HbjrGDRX_F7i4gJQ.js" },
-    { "source": "/pl/api/event", "destination": "https://plausible.io/api/event" },
     { "source": "/api/projects/:id", "destination": "/api/projects/[id]?id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]

@@ -1,7 +1,7 @@
-// Server-side fetchers for the Plausible Stats API and PostHog Query API.
+// Server-side fetchers for the PostHog Query API (HogQL).
 // Used only by the admin dashboard endpoint.
 
-export type PlausibleStats = {
+export type TrafficStats = {
   range30d: {
     visitors: number;
     pageviews: number;
@@ -23,81 +23,6 @@ export type PostHogStats = {
     d30: { eligible: number; returned: number; rate: number };
   };
 };
-
-type PlausibleRow = { dimensions: (string | number)[]; metrics: number[] };
-
-async function plausibleQuery(body: Record<string, unknown>): Promise<PlausibleRow[]> {
-  const apiKey = process.env.PLAUSIBLE_API_KEY;
-  const siteId = process.env.PLAUSIBLE_SITE_ID;
-  if (!apiKey || !siteId) throw new Error('Plausible is not configured');
-
-  const response = await fetch('https://plausible.io/api/v2/query', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ site_id: siteId, ...body }),
-  });
-  if (!response.ok) {
-    throw new Error(`Plausible query failed (${response.status})`);
-  }
-  const json = (await response.json()) as { results: PlausibleRow[] };
-  return json.results;
-}
-
-export async function fetchPlausibleStats(): Promise<PlausibleStats> {
-  const [aggregate, today, timeseries, pages, sources] = await Promise.all([
-    plausibleQuery({
-      date_range: '30d',
-      metrics: ['visitors', 'pageviews', 'visit_duration', 'bounce_rate'],
-    }),
-    plausibleQuery({ date_range: 'day', metrics: ['visitors', 'pageviews'] }),
-    plausibleQuery({
-      date_range: '30d',
-      metrics: ['visitors', 'pageviews'],
-      dimensions: ['time:day'],
-    }),
-    plausibleQuery({
-      date_range: '30d',
-      metrics: ['visitors'],
-      dimensions: ['event:page'],
-      pagination: { limit: 8 },
-    }),
-    plausibleQuery({
-      date_range: '30d',
-      metrics: ['visitors'],
-      dimensions: ['visit:source'],
-      pagination: { limit: 8 },
-    }),
-  ]);
-
-  return {
-    range30d: {
-      visitors: aggregate[0]?.metrics[0] ?? 0,
-      pageviews: aggregate[0]?.metrics[1] ?? 0,
-      visitDuration: aggregate[0]?.metrics[2] ?? 0,
-      bounceRate: aggregate[0]?.metrics[3] ?? 0,
-    },
-    today: {
-      visitors: today[0]?.metrics[0] ?? 0,
-      pageviews: today[0]?.metrics[1] ?? 0,
-    },
-    timeseries: timeseries.map((row) => ({
-      date: String(row.dimensions[0]),
-      visitors: row.metrics[0],
-      pageviews: row.metrics[1],
-    })),
-    topPages: pages.map((row) => ({
-      page: String(row.dimensions[0]),
-      visitors: row.metrics[0],
-    })),
-    topSources: sources.map((row) => ({
-      source: String(row.dimensions[0]),
-      visitors: row.metrics[0],
-    })),
-  };
-}
 
 const TRACKED_EVENTS = [
   'example_loaded',
@@ -142,6 +67,86 @@ async function posthogQuery(query: string): Promise<unknown[][]> {
   }
   const json = (await response.json()) as { results: unknown[][] };
   return json.results;
+}
+
+// Web traffic from PostHog's $pageview events and its sessions table, which
+// replaces the Plausible stats the dashboard used to show.
+export async function fetchTrafficStats(): Promise<TrafficStats> {
+  const [aggregate, sessions, today, timeseries, pages, sources] = await Promise.all([
+    posthogQuery(
+      `select count(distinct person_id) as visitors, count() as pageviews
+       from events
+       where event = '$pageview' and timestamp >= now() - interval 30 day`
+    ),
+    posthogQuery(
+      `select count() as sessions,
+              avg($session_duration) as avg_duration,
+              countIf($is_bounce) as bounces
+       from sessions
+       where $start_timestamp >= now() - interval 30 day and $pageview_count > 0`
+    ),
+    posthogQuery(
+      `select count(distinct person_id) as visitors, count() as pageviews
+       from events
+       where event = '$pageview' and timestamp >= toStartOfDay(now())`
+    ),
+    posthogQuery(
+      `select toString(toDate(timestamp)) as day,
+              count(distinct person_id) as visitors,
+              count() as pageviews
+       from events
+       where event = '$pageview' and timestamp >= now() - interval 30 day
+       group by day
+       order by day asc`
+    ),
+    posthogQuery(
+      `select coalesce(toString(properties.$pathname), '/') as page,
+              count(distinct person_id) as visitors
+       from events
+       where event = '$pageview' and timestamp >= now() - interval 30 day
+       group by page
+       order by visitors desc
+       limit 8`
+    ),
+    posthogQuery(
+      `select coalesce($entry_referring_domain, '$direct') as source,
+              count() as visits
+       from sessions
+       where $start_timestamp >= now() - interval 30 day and $pageview_count > 0
+       group by source
+       order by visits desc
+       limit 8`
+    ),
+  ]);
+
+  const sessionCount = Number(sessions[0]?.[0] ?? 0);
+  const bounces = Number(sessions[0]?.[2] ?? 0);
+
+  return {
+    range30d: {
+      visitors: Number(aggregate[0]?.[0] ?? 0),
+      pageviews: Number(aggregate[0]?.[1] ?? 0),
+      visitDuration: Number(sessions[0]?.[1] ?? 0),
+      bounceRate: sessionCount > 0 ? (bounces / sessionCount) * 100 : 0,
+    },
+    today: {
+      visitors: Number(today[0]?.[0] ?? 0),
+      pageviews: Number(today[0]?.[1] ?? 0),
+    },
+    timeseries: timeseries.map((row) => ({
+      date: String(row[0]),
+      visitors: Number(row[1]),
+      pageviews: Number(row[2]),
+    })),
+    topPages: pages.map((row) => ({
+      page: String(row[0]),
+      visitors: Number(row[1]),
+    })),
+    topSources: sources.map((row) => ({
+      source: String(row[0]),
+      visitors: Number(row[1]),
+    })),
+  };
 }
 
 export async function fetchPostHogStats(): Promise<PostHogStats> {

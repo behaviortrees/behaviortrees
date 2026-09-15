@@ -8,10 +8,10 @@ import {
   type CommercialInterestStats,
 } from '../_lib/db.js';
 import {
-  fetchPlausibleStats,
   fetchPostHogStats,
-  type PlausibleStats,
+  fetchTrafficStats,
   type PostHogStats,
+  type TrafficStats,
 } from '../_lib/analytics-sources.js';
 
 type SectionError = { error: string };
@@ -33,7 +33,7 @@ type ProjectsSection = {
 export type AdminDashboardResponse = {
   generatedAt: string;
   cached: boolean;
-  plausible: PlausibleStats | SectionError;
+  traffic: TrafficStats | SectionError;
   posthog: PostHogStats | SectionError;
   projects: ProjectsSection | SectionError;
   interests: CommercialInterestStats | SectionError;
@@ -109,8 +109,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const [plausible, posthog, projects, interests] = await Promise.allSettled([
-    fetchPlausibleStats(),
+  const [traffic, posthog, projects, interests] = await Promise.allSettled([
+    fetchTrafficStats(),
     fetchPostHogStats(),
     fetchProjectsSection(),
     getCommercialInterestStats(),
@@ -119,7 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body: AdminDashboardResponse = {
     generatedAt: new Date().toISOString(),
     cached: false,
-    plausible: settled(plausible, 'plausible'),
+    traffic: settled(traffic, 'traffic'),
     posthog: settled(posthog, 'posthog'),
     projects: settled(projects, 'projects'),
     interests: settled(interests, 'interests'),

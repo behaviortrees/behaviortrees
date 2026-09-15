@@ -32,15 +32,3 @@
   to = "https://us.i.posthog.com/:splat"
   status = 200
   force = true
-
-[[redirects]]
-  from = "/pl/js/script.js"
-  to = "https://plausible.io/js/pa-tiD5_HbjrGDRX_F7i4gJQ.js"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/pl/api/event"
-  to = "https://plausible.io/api/event"
-  status = 200
-  force = true
