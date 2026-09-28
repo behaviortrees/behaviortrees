@@ -118,8 +118,7 @@ const InterestDialog: React.FC<InterestDialogProps> = ({
             <DialogHeader>
               <DialogTitle>Request received</DialogTitle>
               <DialogDescription>
-                Thanks—your answers will directly shape what we build next. We will contact
-                you at {email}.
+                Thanks—we will contact you at {email}.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -131,7 +130,7 @@ const InterestDialog: React.FC<InterestDialogProps> = ({
             <DialogHeader>
               <DialogTitle>{PLAN_LABELS[plan]}</DialogTitle>
               <DialogDescription>
-                No payment yet. Tell us what would make Behavior Trees useful in production.
+                Tell us about your runtime and project, and we will follow up.
               </DialogDescription>
             </DialogHeader>
 
