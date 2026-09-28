@@ -1,15 +1,15 @@
-import { Project, Tree, SerializedProject, SerializedTree, Block, Connection } from '../../types';
+import { Project, Tree, SerializedBlock, SerializedNode, SerializedProject, SerializedTree, Block, Connection } from '../../types';
 
 /**
  * Serialize a behavior tree to B3 format
  */
 export function serializeTree(tree: Tree): SerializedTree {
-  const serializedBlocks: Record<string, any> = {};
+  const serializedBlocks: Record<string, SerializedBlock> = {};
   
   // Process blocks
   Object.values(tree.blocks).forEach(block => {
     // Create base block data
-    const serializedBlock = {
+    const serializedBlock: SerializedBlock = {
       id: block.id,
       name: block.name,
       title: block.title,
@@ -19,7 +19,7 @@ export function serializeTree(tree: Tree): SerializedTree {
         x: block.position.x, 
         y: block.position.y 
       },
-      children: [] as string[]
+      children: []
     };
     
     // Add to blocks collection
@@ -124,7 +124,7 @@ export function serializeProject(project: Project): SerializedProject {
   
   // Filter custom nodes (non-default)
   const customNodes = Object.entries(project.nodes)
-    .filter(([_, node]) => !node.isDefault)
+    .filter(([, node]) => !node.isDefault)
     .reduce((acc, [key, node]) => {
       acc[key] = {
         version: '1.0.0',
@@ -136,7 +136,7 @@ export function serializeProject(project: Project): SerializedProject {
         properties: node.properties
       };
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, SerializedNode>);
   
   // Create serialized project
   const serializedProject: SerializedProject = {

@@ -200,10 +200,8 @@ const BehaviorTreeEditor: React.FC = () => {
         if (!existingNode) return true;
 
         // Compare data except position
-        // Revert to destructuring, marking position as unused with underscores
-        const { position: _newNodePos, ...newDataNoPos } = newNode.data;
-
-        const { position: _existingNodePos, ...existingDataNoPos } = existingNode.data;
+        const { position: _newPosition, ...newDataNoPos } = newNode.data;
+        const { position: _existingPosition, ...existingDataNoPos } = existingNode.data;
 
         return JSON.stringify(newDataNoPos) !== JSON.stringify(existingDataNoPos);
       });

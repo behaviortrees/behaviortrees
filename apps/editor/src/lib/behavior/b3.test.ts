@@ -147,7 +147,7 @@ describe('old-editor format guarantees', () => {
     expect(out.viewport).toBeUndefined();
     expect(out.display).toMatchObject({ camera_x: 0, camera_y: 0, camera_z: 1 });
 
-    const specs = Object.values(out.nodes as Record<string, any>);
+    const specs = Object.values(out.nodes as Record<string, Record<string, unknown>>);
     specs.forEach((spec) => {
       expect(spec.display).toHaveProperty('x');
       expect(spec.display).toHaveProperty('y');

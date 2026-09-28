@@ -2,9 +2,23 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { B3Tree, b3ToTree, projectToB3, treeToB3, b3ToProject } from './b3';
+import { B3Project, B3Tree, b3ToTree, projectToB3, treeToB3, b3ToProject } from './b3';
 import { DEFAULT_NODES } from './defaults';
 import { Project } from '../../types';
+
+// The slice of the old AngularJS editor's global API this test drives.
+type ClassicTree = unknown;
+type ClassicEditorWindow = Window & {
+  editor: {
+    project: {
+      create(): void;
+      open(data: B3Project): void;
+      get(): { trees: { each(fn: (tree: ClassicTree) => void): void; select(tree: ClassicTree): void } };
+    };
+    import: { treeAsData(data: B3Tree): void };
+    export: { treeToData(): B3Tree; projectToData(): B3Project };
+  };
+};
 
 // True cross-editor round trip: what THIS app exports is loaded into the REAL
 // old editor (running in a browser) through its own ImportManager, then
@@ -68,36 +82,36 @@ describe.skipIf(!OLD_EDITOR_URL || !CHROMIUM_PATH)('old editor accepts new-edito
       page.on('pageerror', (e) => pageErrors.push(e.message));
 
       await page.goto(OLD_EDITOR_URL!);
-      await page.waitForFunction(() => !!(window as any).editor, undefined, { timeout: 15000 });
+      await page.waitForFunction(() => !!(window as Partial<ClassicEditorWindow>).editor, undefined, { timeout: 15000 });
 
       // Tree files: import each through the old ImportManager, re-export
       for (const treeExport of trees) {
         const reExported = await page.evaluate((data) => {
-          const w = window as any;
+          const w = window as unknown as ClassicEditorWindow;
           w.editor.project.create();
           w.editor.import.treeAsData(data);
           const project = w.editor.project.get();
-          const all: any[] = [];
-          project.trees.each((t: any) => all.push(t));
+          const all: ClassicTree[] = [];
+          project.trees.each((t) => all.push(t));
           project.trees.select(all[all.length - 1]);
           return w.editor.export.treeToData();
-        }, treeExport as any);
+        }, treeExport);
 
         expect(semantics(reExported)).toEqual(semantics(treeExport));
       }
 
       // Project file: import through the old projectAsData path
       const projectReExported = await page.evaluate((data) => {
-        const w = window as any;
+        const w = window as unknown as ClassicEditorWindow;
         w.editor.project.open(data);
         return w.editor.export.projectToData();
-      }, projectExport as any);
+      }, projectExport);
 
       expect(projectReExported.trees).toHaveLength(projectExport.trees.length);
       expect(projectReExported.trees.map(semantics)).toEqual(projectExport.trees.map(semantics));
 
       const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
-      expect([...projectReExported.custom_nodes].sort(byName)).toEqual(
+      expect([...(projectReExported.custom_nodes ?? [])].sort(byName)).toEqual(
         [...(projectExport.custom_nodes ?? [])].sort(byName),
       );
 

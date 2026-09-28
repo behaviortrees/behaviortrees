@@ -7,7 +7,7 @@ export interface Node {
   title?: string;
   category: NodeCategory;
   description?: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   isDefault?: boolean;
 }
 
@@ -18,7 +18,7 @@ export interface Block {
   title?: string;
   category: NodeCategory;
   description?: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   position: {
     x: number;
     y: number;
@@ -40,7 +40,7 @@ export interface Tree {
   blocks: Record<string, Block>;
   connections: Record<string, Connection>;
   rootId?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   viewport: {
     x: number;
     y: number;
@@ -68,7 +68,7 @@ export interface SerializedNode {
   category: NodeCategory;
   title?: string;
   description?: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
 }
 
 export interface SerializedBlock {
@@ -77,7 +77,7 @@ export interface SerializedBlock {
   title?: string;
   category?: NodeCategory;
   description?: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   position: {x: number, y: number};
   children?: string[];
   child?: string;
@@ -90,7 +90,7 @@ export interface SerializedTree {
   title: string;
   description?: string;
   rootId: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   blocks: Record<string, SerializedBlock>;
   viewport: {
     x: number;
