@@ -1,4 +1,4 @@
-import { Tree } from '../../types';
+import { Block, Tree } from '../../types';
 
 // Derived from behavior3editor's OrganizeManager (MIT, © 2014 Renato de
 // Pontes Pereira) — see LICENSE-MIT at the package root.
@@ -9,30 +9,79 @@ import { Tree } from '../../types';
 
 export type TreeLayout = 'horizontal' | 'vertical';
 
+export const LAYOUT_STORAGE_KEY = 'bt-layout';
+
+export function readTreeLayout(): TreeLayout {
+  try {
+    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'vertical' ? 'vertical' : 'horizontal';
+  } catch {
+    return 'horizontal';
+  }
+}
+
+type Point = { x: number; y: number };
+
+// Siblings run in on-screen order: top-to-bottom in horizontal layout,
+// left-to-right in vertical (like the old editor's ExportManager). Organize,
+// export and the canvas order badges all share this so they always agree.
+export function compareSiblings(layout: TreeLayout) {
+  return (a: Point, b: Point): number =>
+    layout === 'horizontal' ? a.y - b.y || a.x - b.x : a.x - b.x || a.y - b.y;
+}
+
+export function childIdsInOrder(tree: Tree, blockId: string, layout: TreeLayout): string[] {
+  const byPosition = compareSiblings(layout);
+  return Object.values(tree.connections)
+    .filter((c) => c.source === blockId)
+    .map((c) => tree.blocks[c.target])
+    .filter((b): b is Block => !!b)
+    .sort((a, b) => byPosition(a.position, b.position))
+    .map((b) => b.id);
+}
+
 const H_SPACING = 208;
 const V_SPACING = 88;
 const V_COMPENSATION = 42;
 
-export function organizeTree(tree: Tree, layout: TreeLayout = 'horizontal', byIndex = false): void {
+// Every block below the given ones (not including them), following
+// connections; tolerates cycles
+export function descendantIds(tree: Tree, blockIds: string[]): string[] {
+  const seen = new Set(blockIds);
+  const found: string[] = [];
+  const queue = [...blockIds];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    Object.values(tree.connections).forEach((c) => {
+      if (c.source === id && tree.blocks[c.target] && !seen.has(c.target)) {
+        seen.add(c.target);
+        found.push(c.target);
+        queue.push(c.target);
+      }
+    });
+  }
+  return found;
+}
+
+// `orderLayout` is the layout the tree is currently drawn in: switching
+// layouts must read sibling order along the old axis, not the new one.
+export function organizeTree(
+  tree: Tree,
+  layout: TreeLayout = 'horizontal',
+  byIndex = false,
+  orderLayout: TreeLayout = layout,
+): void {
   if (!tree.rootId || !tree.blocks[tree.rootId]) return;
 
   const root = tree.blocks[tree.rootId];
   const offsetX = root.position.x;
   const offsetY = root.position.y;
 
-  const childIdsOf = (blockId: string): string[] => {
-    const children = Object.values(tree.connections)
-      .filter((c) => c.source === blockId)
-      .map((c) => tree.blocks[c.target])
-      .filter((b) => !!b);
-    if (!byIndex) {
-      // Match on-screen order, like the old editor's non-indexed organize
-      children.sort((a, b) =>
-        layout === 'horizontal' ? a.position.y - b.position.y : a.position.x - b.position.x,
-      );
-    }
-    return children.map((b) => b.id);
-  };
+  const childIdsOf = (blockId: string): string[] =>
+    byIndex
+      ? Object.values(tree.connections)
+          .filter((c) => c.source === blockId && !!tree.blocks[c.target])
+          .map((c) => c.target)
+      : childIdsInOrder(tree, blockId, orderLayout);
 
   let leafCount = 0;
   const visited = new Set<string>();

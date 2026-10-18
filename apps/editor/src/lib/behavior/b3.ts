@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Block, Connection, Node, NodeCategory, Project, Tree } from '../../types';
 import { DEFAULT_NODES } from './defaults';
-import { organizeTree } from './organize';
+import { childIdsInOrder, organizeTree, readTreeLayout, TreeLayout } from './organize';
 import { deserializeProject } from './serializer';
 
 // Derived from behavior3editor's ExportManager/ImportManager (MIT, © 2014
@@ -72,20 +72,16 @@ export type B3Project = {
 // Export: internal model -> behavior3
 // ---------------------------------------------------------------------------
 
-// Children are ordered top-to-bottom, matching the old editor's horizontal
-// layout export ordering.
-function childIdsOf(tree: Tree, blockId: string): string[] {
-  return Object.values(tree.connections)
-    .filter((c) => c.source === blockId)
-    .map((c) => tree.blocks[c.target])
-    .filter((b): b is Block => !!b)
-    .sort((a, b) => a.position.y - b.position.y)
-    .map((b) => b.id);
-}
-
-export function treeToB3(tree: Tree, project: Project | null, includeCustomNodes: boolean): B3Tree {
+// Children are written in on-screen order for the current layout, matching
+// the old editor's ExportManager
+export function treeToB3(
+  tree: Tree,
+  project: Project | null,
+  includeCustomNodes: boolean,
+  layout: TreeLayout = readTreeLayout(),
+): B3Tree {
   const root = tree.rootId ? tree.blocks[tree.rootId] : undefined;
-  const rootChildren = root ? childIdsOf(tree, root.id) : [];
+  const rootChildren = root ? childIdsInOrder(tree, root.id, layout) : [];
 
   const data: B3Tree = {
     version: B3_VERSION,
@@ -117,7 +113,7 @@ export function treeToB3(tree: Tree, project: Project | null, includeCustomNodes
       display: { x: block.position.x, y: block.position.y },
     };
 
-    const children = childIdsOf(tree, block.id);
+    const children = childIdsInOrder(tree, block.id, layout);
     if (block.category === 'composite') {
       spec.children = children;
     } else if (block.category === 'decorator') {

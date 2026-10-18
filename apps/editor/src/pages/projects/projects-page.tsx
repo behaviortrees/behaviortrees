@@ -12,7 +12,7 @@ import { useSyncStore } from '../../lib/storage/cloud-sync';
 import { track } from '../../lib/analytics';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { Button } from '../../components/ui/button';
-import { Plus, Download, Trash, FolderOpen, Pencil, X } from 'lucide-react';
+import { ArrowRight, Plus, Download, Trash, FolderOpen, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ProjectsPage: React.FC = () => {
@@ -238,28 +238,40 @@ const ProjectsPage: React.FC = () => {
                 </div>
                 <div className="flex space-x-2">
                   {project?.id === item.id ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="Close project"
-                      onClick={() => {
-                        closeProject();
-                        toast.success('Project closed');
-                      }}
-                    >
-                      <X size={16} />
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        title="Go to editor"
+                        className="gap-2"
+                        onClick={() => navigate('/editor')}
+                      >
+                        <span className="hidden sm:inline">Go to editor</span>
+                        <ArrowRight size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Close project"
+                        onClick={() => {
+                          closeProject();
+                          toast.success('Project closed');
+                        }}
+                      >
+                        <X size={16} />
+                      </Button>
+                    </>
                   ) : (
                     <Button
-                      variant="ghost"
                       size="sm"
-                      title="Open project"
+                      title="Open in editor"
+                      className="gap-2"
                       onClick={() => {
                         loadProject(item);
                         navigate('/editor');
                       }}
                     >
                       <FolderOpen size={16} />
+                      <span className="hidden sm:inline">Open in editor</span>
                     </Button>
                   )}
                   <Button

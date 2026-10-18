@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { track } from '../../lib/analytics';
+import { LAYOUT_STORAGE_KEY, readTreeLayout, TreeLayout } from '../../lib/behavior/organize';
 import { recordActivation } from '../../lib/product-metrics';
 import { toast } from 'sonner';
 import ExportModal, { ExportType } from '../modals/export-modal';
@@ -58,11 +59,13 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
     refreshCanvas();
     redo();
   };
-  const handleOrganize = (layout: 'horizontal' | 'vertical') => {
+  const handleOrganize = (layout: TreeLayout) => {
     if (!project?.selectedTreeId) return;
-    localStorage.setItem('bt-layout', layout);
+    // Sibling order is read along the layout the tree is drawn in now
+    const current = readTreeLayout();
+    localStorage.setItem(LAYOUT_STORAGE_KEY, layout);
     refreshCanvas();
-    organize(project.selectedTreeId, layout);
+    organize(project.selectedTreeId, layout, current);
   };
 
   const isPanelCollapsed = (panelId: PanelId) => layout.collapsed.includes(panelId);
@@ -204,12 +207,16 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({
             <Redo2 size={14} />
           </button>
           <button
-            onClick={() => handleOrganize(localStorage.getItem('bt-layout') === 'vertical' ? 'vertical' : 'horizontal')}
+            onClick={() => handleOrganize(readTreeLayout())}
             onContextMenu={(e) => {
               e.preventDefault();
-              handleOrganize(localStorage.getItem('bt-layout') === 'vertical' ? 'horizontal' : 'vertical');
+              handleOrganize(readTreeLayout() === 'vertical' ? 'horizontal' : 'vertical');
             }}
-            title="Auto organize (A) — right-click to switch horizontal/vertical"
+            title={
+              'Auto organize (A) — right-click to switch horizontal/vertical.\n' +
+              'Children keep their on-screen order (top to bottom, or left to right in vertical layout), ' +
+              'which is also the order they run in. The numbers on the connections show it.'
+            }
             aria-label="Auto organize"
             className="toolbar-btn toolbar-btn--icon"
           >

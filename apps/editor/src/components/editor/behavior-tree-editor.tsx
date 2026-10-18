@@ -14,11 +14,14 @@ import ReactFlow, {
   OnConnectStart,
   OnConnectEnd,
   ReactFlowInstance,
+  NodeDragHandler,
   NodePositionChange,
   Position,
+  SelectionDragHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
+import { descendantIds, readTreeLayout } from '../../lib/behavior/organize';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { Block } from '../../types';
 import EditorLayout from '../layouts/editor-layout';
@@ -53,7 +56,7 @@ const edgeTypes: EdgeTypes = {
 // Handles follow the persisted layout direction: parent → child flows
 // left-to-right in horizontal layout, top-to-bottom in vertical
 const getHandlePositions = () => {
-  const vertical = localStorage.getItem('bt-layout') === 'vertical';
+  const vertical = readTreeLayout() === 'vertical';
   return {
     sourcePosition: vertical ? Position.Bottom : Position.Right,
     targetPosition: vertical ? Position.Top : Position.Left,
@@ -73,6 +76,7 @@ const BehaviorTreeEditor: React.FC = () => {
   const selectedTreeId = useProjectStore(state => state.project?.selectedTreeId);
   const createBlock = useProjectStore(state => state.createBlock);
   const updateBlock = useProjectStore(state => state.updateBlock);
+  const moveBlocks = useProjectStore(state => state.moveBlocks);
   const deleteBlock = useProjectStore(state => state.deleteBlock);
   const createConnection = useProjectStore(state => state.createConnection);
   const deleteConnection = useProjectStore(state => state.deleteConnection);
@@ -108,6 +112,10 @@ const BehaviorTreeEditor: React.FC = () => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Bumped to force a rebuild from the store even when the project itself
+  // didn't change (e.g. undo with an empty history)
+  const [refreshCount, setRefreshCount] = useState(0);
 
   // Cache to store previous positions of nodes
   const prevNodePositionsRef = useRef<{[key: string]: {x: number, y: number}}>({});
@@ -257,7 +265,7 @@ const BehaviorTreeEditor: React.FC = () => {
   // When selected tree changes, update the flow
   useEffect(() => {
     syncTreeToFlow();
-  }, [syncTreeToFlow]);
+  }, [syncTreeToFlow, refreshCount]);
 
   // Switching trees (including after an import) invalidates the position
   // cache and needs the viewport refit to the new tree's blocks
@@ -285,6 +293,7 @@ const BehaviorTreeEditor: React.FC = () => {
   const refreshFromStore = useCallback(() => {
     prevNodePositionsRef.current = {};
     setNodes([]);
+    setRefreshCount(count => count + 1);
   }, [setNodes]);
 
   // Toolbar buttons live outside this component; they announce store-side
@@ -345,9 +354,8 @@ const BehaviorTreeEditor: React.FC = () => {
         e.preventDefault();
         setNodes(ns => ns.map(n => ({ ...n, selected: !n.selected })));
       } else if (!mod && key === 'a') {
-        const layout = localStorage.getItem('bt-layout') === 'vertical' ? 'vertical' : 'horizontal';
         refreshFromStore();
-        organize(selectedTreeId, layout);
+        organize(selectedTreeId, readTreeLayout());
       }
     };
 
@@ -404,6 +412,118 @@ const BehaviorTreeEditor: React.FC = () => {
     [project, selectedTreeId, createConnection, setEdges, autoSave]
   );
 
+  // Snap moved nodes to the grid and save them to the store as one undo
+  // step. `exact` positions skip snapping (branch followers keep their
+  // offsets from the dragged node).
+  const commitPositions = useCallback(
+    (
+      moved: Record<string, { x: number, y: number }>,
+      exact: Record<string, { x: number, y: number }> = {}
+    ) => {
+      if (!selectedTreeId) return;
+      const snapped: Record<string, { x: number, y: number }> = {};
+      Object.entries(moved).forEach(([id, position]) => {
+        snapped[id] = {
+          x: Math.round(position.x / 15) * 15,
+          y: Math.round(position.y / 15) * 15,
+        };
+      });
+      Object.assign(snapped, exact);
+      Object.entries(snapped).forEach(([id, position]) => {
+        prevNodePositionsRef.current[id] = position;
+      });
+
+      setNodes(nodes =>
+        nodes.map(node =>
+          snapped[node.id]
+            ? { ...node, position: snapped[node.id], data: { ...node.data, position: snapped[node.id] } }
+            : node
+        )
+      );
+
+      // Batch the store write after the UI update
+      requestAnimationFrame(() => {
+        moveBlocks(selectedTreeId, snapped);
+        if (autoSave) {
+          try {
+            useProjectStore.getState().saveProject();
+          } catch (error) {
+            console.error('Auto-save failed:', error);
+          }
+        }
+      });
+    },
+    [selectedTreeId, moveBlocks, setNodes, autoSave]
+  );
+
+  // Alt+drag moves a node together with everything below it. The dragged
+  // nodes are moved by ReactFlow; their descendants follow by the same delta.
+  const branchDragRef = useRef<{
+    anchor: { x: number, y: number };
+    followers: Record<string, { x: number, y: number }>;
+  } | null>(null);
+
+  const onNodeDragStart: NodeDragHandler = useCallback(
+    (event, node, dragged) => {
+      branchDragRef.current = null;
+      if (!event.altKey || !project || !selectedTreeId) return;
+
+      const tree = project.trees[selectedTreeId];
+      const followerIds = new Set(descendantIds(tree, dragged.map(n => n.id)));
+      const followers: Record<string, { x: number, y: number }> = {};
+      nodes.forEach(n => {
+        if (followerIds.has(n.id)) followers[n.id] = { ...n.position };
+      });
+      branchDragRef.current = { anchor: { ...node.position }, followers };
+    },
+    [project, selectedTreeId, nodes]
+  );
+
+  const onNodeDrag: NodeDragHandler = useCallback(
+    (_, node) => {
+      const branch = branchDragRef.current;
+      if (!branch) return;
+      const dx = node.position.x - branch.anchor.x;
+      const dy = node.position.y - branch.anchor.y;
+      setNodes(nodes =>
+        nodes.map(n => {
+          const start = branch.followers[n.id];
+          return start ? { ...n, position: { x: start.x + dx, y: start.y + dy } } : n;
+        })
+      );
+    },
+    [setNodes]
+  );
+
+  const onNodeDragStop: NodeDragHandler = useCallback(
+    (_, node, dragged) => {
+      const moved: Record<string, { x: number, y: number }> = {};
+      dragged.forEach(n => {
+        moved[n.id] = n.position;
+      });
+      const followers: Record<string, { x: number, y: number }> = {};
+      const branch = branchDragRef.current;
+      branchDragRef.current = null;
+      if (branch) {
+        const dx = node.position.x - branch.anchor.x;
+        const dy = node.position.y - branch.anchor.y;
+        Object.entries(branch.followers).forEach(([id, start]) => {
+          followers[id] = { x: start.x + dx, y: start.y + dy };
+        });
+      }
+      commitPositions(moved, followers);
+    },
+    [commitPositions]
+  );
+
+  // Dragging the box around a rubber-band selection
+  const onSelectionDragStop: SelectionDragHandler = useCallback(
+    (_, dragged) => {
+      commitPositions(Object.fromEntries(dragged.map(n => [n.id, n.position])));
+    },
+    [commitPositions]
+  );
+
   // Handle node changes
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -428,65 +548,17 @@ const BehaviorTreeEditor: React.FC = () => {
         // Apply filtered changes to the local state for immediate feedback
         onNodesChange(filteredChanges);
 
-        // For completed position changes (after dragging ends)
-        const positionChanges = filteredChanges.filter(change =>
-          change.type === 'position' && change.position && change.id && change.dragging === false
+        // Keyboard nudges arrive as finished position changes; drags carry
+        // no position when they end and are committed in onNodeDragStop
+        const positionChanges = filteredChanges.filter(
+          (change): change is NodePositionChange =>
+            change.type === 'position' && !!change.position && change.dragging === false
         );
 
         if (positionChanges.length > 0) {
-          // Use requestAnimationFrame to batch position updates
-          requestAnimationFrame(() => {
-            positionChanges.forEach(change => {
-              // Ensure change is of type 'position' before accessing position/id
-              if (change.type === 'position' && change.position && change.id) {
-                // Round positions for consistency and reduce jitter
-                const x = Math.round(change.position.x / 15) * 15;
-                const y = Math.round(change.position.y / 15) * 15;
-
-                // Update our position cache
-                prevPositions[change.id] = { x, y };
-
-                // Update the store with final position
-                updateBlock(selectedTreeId, change.id, {
-                  position: { x, y }
-                });
-              }
-            });
-
-            // Update nodes after all position changes are processed
-            setNodes(nodes =>
-              nodes.map(node => {
-                // If this node had a position change, make sure it's at the snapped position
-                // Add type guard before accessing change.id and change.position
-                const posChange = positionChanges.find(
-                  (change): change is NodePositionChange =>
-                    change.type === 'position' && change.id === node.id
-                );
-                if (posChange && posChange.position) {
-                  const x = Math.round(posChange.position.x / 15) * 15;
-                  const y = Math.round(posChange.position.y / 15) * 15;
-                  return {
-                    ...node,
-                    position: { x, y },
-                    data: {
-                      ...node.data,
-                      position: { x, y }
-                    }
-                  };
-                }
-                return node;
-              })
-            );
-
-            // Auto-save after node position changes
-            if (autoSave && project && positionChanges.length > 0) {
-              try {
-                useProjectStore.getState().saveProject();
-              } catch (error) {
-                console.error('Auto-save failed:', error);
-              }
-            }
-          });
+          commitPositions(
+            Object.fromEntries(positionChanges.map(change => [change.id, change.position!]))
+          );
         }
 
         // Handle node removals - never allow removal of the root node
@@ -522,7 +594,7 @@ const BehaviorTreeEditor: React.FC = () => {
         onNodesChange(changes);
       }
     },
-    [project, selectedTreeId, updateBlock, deleteBlock, onNodesChange, setNodes, autoSave]
+    [project, selectedTreeId, deleteBlock, onNodesChange, commitPositions, autoSave]
   );
 
   // Handle edge changes (deletions)
@@ -764,6 +836,10 @@ const BehaviorTreeEditor: React.FC = () => {
             onConnectEnd={onConnectEnd}
             isValidConnection={isValidConnection}
             onNodeClick={onNodeClick}
+            onNodeDragStart={onNodeDragStart}
+            onNodeDrag={onNodeDrag}
+            onNodeDragStop={onNodeDragStop}
+            onSelectionDragStop={onSelectionDragStop}
             onInit={setReactFlowInstance}
             onDragOver={onDragOver}
             onDrop={onDrop}

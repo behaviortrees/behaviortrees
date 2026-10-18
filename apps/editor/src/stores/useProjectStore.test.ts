@@ -14,6 +14,8 @@ globalThis.localStorage = {
   },
 } as Storage;
 
+import { treeToB3 } from '../lib/behavior/b3';
+import { descendantIds } from '../lib/behavior/organize';
 import { useProjectStore } from './useProjectStore';
 
 // The store is a singleton; each test starts from a fresh project
@@ -220,6 +222,79 @@ describe('organize', () => {
     const tree = store().project!.trees[treeId()];
     expect(tree.blocks[seq].position.y).toBeGreaterThan(tree.blocks[rootId()].position.y);
     expect(tree.blocks[a].position.y).toBeGreaterThan(tree.blocks[seq].position.y);
+  });
+});
+
+describe('sibling order', () => {
+  // A sequence with three children placed at the given positions
+  function sequenceWith(positions: { x: number; y: number }[]) {
+    const seq = addBlock('Sequence');
+    store().createConnection(treeId(), rootId(), seq);
+    const kids = positions.map((position) => {
+      const id = addBlock('Wait');
+      store().createConnection(treeId(), seq, id);
+      store().moveBlocks(treeId(), { [id]: position });
+      return id;
+    });
+    return { seq, kids };
+  }
+
+  const tree = () => store().project!.trees[treeId()];
+
+  it('horizontal organize keeps top-to-bottom order', () => {
+    const { kids: [a, b, c] } = sequenceWith([{ x: 300, y: 200 }, { x: 300, y: 0 }, { x: 300, y: 100 }]);
+    store().organize(treeId(), 'horizontal');
+    const ys = [b, c, a].map((id) => tree().blocks[id].position.y);
+    expect(ys).toEqual([...ys].sort((p, q) => p - q));
+  });
+
+  it('switching layout reads order along the old axis', () => {
+    // Drawn horizontally: same x, order comes from y (b, c, a)
+    const { kids: [a, b, c] } = sequenceWith([{ x: 300, y: 200 }, { x: 300, y: 0 }, { x: 300, y: 100 }]);
+    store().organize(treeId(), 'vertical', 'horizontal');
+    const xs = [b, c, a].map((id) => tree().blocks[id].position.x);
+    expect(xs[0]).toBeLessThan(xs[1]);
+    expect(xs[1]).toBeLessThan(xs[2]);
+  });
+
+  it('export orders children along the layout axis', () => {
+    const { seq, kids: [a, b, c] } = sequenceWith([{ x: 200, y: 0 }, { x: 0, y: 10 }, { x: 100, y: 5 }]);
+    expect(treeToB3(tree(), null, false, 'horizontal').nodes[seq].children).toEqual([a, c, b]);
+    expect(treeToB3(tree(), null, false, 'vertical').nodes[seq].children).toEqual([b, c, a]);
+  });
+
+  it('moveBlocks moves several blocks as one undo step', () => {
+    const a = addBlock('Wait');
+    const b = addBlock('Failer');
+    const before = store().undoStack.length;
+    store().moveBlocks(treeId(), { [a]: { x: 30, y: 45 }, [b]: { x: 60, y: 90 } });
+    expect(store().undoStack.length).toBe(before + 1);
+    expect(tree().blocks[a].position).toEqual({ x: 30, y: 45 });
+    store().undo();
+    expect(tree().blocks[a].position).toEqual({ x: 0, y: 0 });
+    expect(tree().blocks[b].position).toEqual({ x: 0, y: 0 });
+  });
+
+  it('moveBlocks ignores no-op moves', () => {
+    const a = addBlock('Wait');
+    const before = store().undoStack.length;
+    store().moveBlocks(treeId(), { [a]: { x: 0, y: 0 } });
+    expect(store().undoStack.length).toBe(before);
+  });
+});
+
+describe('descendantIds', () => {
+  it('collects the whole branch below a node', () => {
+    const seq = addBlock('Sequence');
+    const inv = addBlock('Inverter');
+    const a = addBlock('Wait');
+    const sibling = addBlock('Failer');
+    const parent = addBlock('Priority');
+    store().createConnection(treeId(), parent, seq);
+    store().createConnection(treeId(), parent, sibling);
+    store().createConnection(treeId(), seq, inv);
+    store().createConnection(treeId(), inv, a);
+    expect(new Set(descendantIds(store().project!.trees[treeId()], [seq]))).toEqual(new Set([inv, a]));
   });
 });
 
