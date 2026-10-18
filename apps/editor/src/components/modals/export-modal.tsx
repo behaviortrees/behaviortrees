@@ -36,6 +36,11 @@ const ExportModal: React.FC<ExportModalProps> = ({
 	exportType = 'project',
 }) => {
 	const [type, setType] = useState<ExportType>(exportType);
+
+	// The dialog stays mounted, so take the requested type each time it opens
+	useEffect(() => {
+		if (open) setType(exportType);
+	}, [open, exportType]);
 	const [format, setFormat] = useState<'json' | 'compact'>('json');
 	const [copied, setCopied] = useState(false);
 	const textAreaRef = useRef<HTMLTextAreaElement>(null);
