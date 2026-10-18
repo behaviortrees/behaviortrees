@@ -23,11 +23,13 @@ wrong is expensive to undo mid-project. Here's the landscape, honestly assessed.
 
 Unity now ships an official behavior tree package, **Unity Behavior** (the successor to the
 "Muse Behavior" experiment), with a visual graph editor, blackboard variables, and runtime
-debugging. It's free, integrated, and supported by Unity itself.
+debugging. It's free, integrated, and requires Unity 6.
 
-**Choose it if** you're on a recent Unity version and want a maintained, no-cost default.
-**Watch out for**: it's young compared to the veteran assets below — fewer built-in nodes,
-fewer community examples, and APIs that are still evolving.
+**Choose it if** you're on Unity 6 and want a no-cost default without third-party
+dependencies. **Watch out for**: in 2025 Unity cut its investment in the package — it's
+still supported, but development is limited to bug fixes and stability work, so don't
+count on big new features. It's also young compared to the veteran assets below, with
+fewer built-in nodes and community examples.
 
 ## Option 2: Behavior Designer (Asset Store, paid)
 
@@ -52,8 +54,9 @@ real games often want both, and NodeCanvas lets a BT branch *contain* an FSM and
 
 ## Option 4: open-source libraries
 
-Solid free options if you prefer code-first trees or want no dependency on paid assets:
-**fluid-behavior-tree** (builder-pattern C#, very readable), **BehaviorTree.CPP-style
+Free options if you prefer code-first trees or want no dependency on paid assets:
+**fluid-behavior-tree** (builder-pattern C#, very readable, though largely dormant since
+its 2024 release), **BehaviorTree.CPP-style
 ports**, or the classic **behavior3** runtimes (the same family this site's editor exports
 for — see below).
 
@@ -94,5 +97,6 @@ For free reading, the **Game AI Pro** series chapters on behavior trees are
 
 - [Sequence, Selector, and Decorator Nodes Explained](/learn/behavior-tree-nodes-explained/)
 - [Behavior Tree Examples: Common Game AI Patterns](/learn/behavior-tree-examples/)
+- Comparing engines? [Best Behavior Tree Tools by Engine](/learn/best-behavior-tree-tools/)
 - Shipping on other engines too? [Unreal Engine](/learn/behavior-trees-in-unreal-engine/) ·
   [Godot](/learn/behavior-trees-in-godot/)

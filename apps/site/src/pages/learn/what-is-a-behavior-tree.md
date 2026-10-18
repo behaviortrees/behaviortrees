@@ -127,6 +127,7 @@ clean JSON you can load in your engine or framework.
   [Unreal Engine](/learn/behavior-trees-in-unreal-engine/) ·
   [Godot](/learn/behavior-trees-in-godot/) ·
   [Robotics](/learn/behavior-trees-in-robotics/) ·
-  [Python](/learn/behavior-trees-in-python/)
+  [Python](/learn/behavior-trees-in-python/) — or compare them all in
+  [Best Behavior Tree Tools by Engine](/learn/best-behavior-tree-tools/)
 - [Behavior Tree Examples: Common Game AI Patterns](/learn/behavior-tree-examples/)
 - Ready to code? [How to Write a Behavior Tree from Scratch](/learn/how-to-implement-a-behavior-tree/)

@@ -2,8 +2,7 @@
 layout: ../../layouts/ArticleLayout.astro
 title: "Behavior Trees in Godot: LimboAI, Beehave, and Rolling Your Own"
 description: "Godot doesn't ship behavior trees, but the ecosystem has strong free options — LimboAI, Beehave, or a small GDScript implementation of your own — compared honestly, with a design-first workflow."
-pubDate: "2026-07-28"
-draft: true
+pubDate: "2026-10-18"
 order: 8
 ---
 
@@ -21,9 +20,12 @@ writing your own. (Still deciding whether behavior trees fit at all? Start with
 **LimboAI** is the most complete behavior tree implementation for Godot 4: a dedicated
 visual tree editor inside the Godot editor, a rich built-in task library, a proper
 [blackboard](/learn/behavior-tree-blackboard/) with scoping, live in-editor debugging of
-running trees, and custom tasks written in GDScript or C#. It's distributed as a
-GDExtension (or compiled-in module), so the core runs as native code rather than
-interpreted script.
+running trees, and custom tasks written in GDScript. The core is C++, so it runs as native
+code rather than interpreted script, and it comes two ways: a GDExtension you install from
+the Asset Library (Godot 4.6+ for the current 1.8 release), or a module compiled into a
+custom engine build. The module has a slightly better editor experience, and it's the
+route to take if you want to write tasks in C# — C# is only confirmed working with the
+.NET module builds.
 
 Two design choices stand out:
 
@@ -33,6 +35,10 @@ Two design choices stand out:
 - **It ships a hierarchical state machine too** (`LimboHSM`), designed to interoperate:
   states can run behavior trees. That's the "FSM at the top, BTs inside" hybrid
   [real games use](/learn/behavior-trees-vs-state-machines/), supported out of the box.
+  (State machines are set up in code; only the trees get a visual editor.)
+- **Blackboards are scoped.** A tree declares its variables in a blackboard *plan*, each
+  agent can override them, and scopes chain to a parent — so a squad of agents can share
+  data through a common parent scope while keeping their own.
 
 **Choose it if** you're building a serious project and want the closest thing Godot has to
 Unreal's integrated BT tooling. **Watch out for**: it's a bigger dependency with its own
@@ -46,10 +52,14 @@ selector — including memory variants), which have condition/action leaves that
 GDScript classes overriding a `tick()` method.
 
 The appeal is that it feels like Godot — you compose trees in the scene dock you already
-know, no new editor to learn, and the whole library is readable GDScript. The trade-offs
-follow from the same choice: each agent carries its own copy of the tree as live nodes
-(heavier at large agent counts), and there's no equivalent of LimboAI's dedicated editor,
-debugger, or blackboard scoping.
+know, no new editor to learn, and the whole library is readable GDScript. It still covers
+the essentials: a **Beehave tab in Godot's debugger** shows each tree's live node states
+while the game runs, and every tree gets its own [blackboard](/learn/behavior-tree-blackboard/)
+(shareable between trees, with built-in leaves to set, check, and compare keys).
+
+The trade-offs follow from the scene-node design: each agent carries its own copy of the
+tree as live nodes (heavier at large agent counts), there's no dedicated tree editor beyond
+the scene dock, and the blackboard is simpler than LimboAI's plans and scope chains.
 
 **Choose it if** you want the gentlest learning curve, your agent count is modest, and
 "just Godot nodes" sounds better than "an embedded AI IDE."
@@ -86,5 +96,6 @@ runtime executes it:
 
 - [Sequence, Selector, and Decorator Nodes Explained](/learn/behavior-tree-nodes-explained/)
 - [Behavior Tree Blackboards](/learn/behavior-tree-blackboard/)
+- Comparing engines? [Best Behavior Tree Tools by Engine](/learn/best-behavior-tree-tools/)
 - Shipping on other engines too? [Unity](/learn/behavior-trees-in-unity/) ·
   [Unreal](/learn/behavior-trees-in-unreal-engine/)
