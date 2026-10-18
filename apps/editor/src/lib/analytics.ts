@@ -72,6 +72,8 @@ export type AnalyticsEventMap = {
     failure_category: 'validation' | 'network' | 'server' | 'unknown';
   };
   example_loaded: { example: string };
+  home_preview_clicked: { example: string };
+  home_cta_clicked: { cta: 'create_project' | 'continue_project' | 'guides' };
   tree_created: Record<string, never>;
   project_created: Record<string, never>;
   project_saved: Record<string, unknown>;

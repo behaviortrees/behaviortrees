@@ -1,9 +1,28 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { TreePreview } from '../../components/home/tree-preview';
 import { track } from '../../lib/analytics';
 import { CLOUD_ENABLED } from '../../lib/auth';
 import { LATEST_RELEASE } from '../../lib/changelog';
 import { useProjectStore } from '../../stores/useProjectStore';
+
+// Why this editor, not what it does: the live preview above already shows that
+const REASONS = [
+	{
+		title: 'Free, no account',
+		body: CLOUD_ENABLED
+			? 'Everything saves in your browser. Sign in only if you want projects synced across machines.'
+			: 'Everything saves in your browser. Nothing to sign up for.',
+	},
+	{
+		title: 'behavior3 format',
+		body: 'Exports plain JSON that behavior3 runtimes read, with your custom nodes included.',
+	},
+	{
+		title: 'Learn as you go',
+		body: 'Guides explain each concept, with example trees you can open in one click.',
+	},
+];
 
 const HomePage: React.FC = () => {
 	const project = useProjectStore((state) => state.project);
@@ -12,7 +31,7 @@ const HomePage: React.FC = () => {
 	// whitespace is allowed to fall on the right.
 	return (
 		<div className="max-w-4xl">
-			<div className="mb-14 max-w-2xl">
+			<div className="mb-12 max-w-2xl">
 				<Link
 					to="/changelog"
 					onClick={() => track('whats_new_clicked', { release: LATEST_RELEASE.id, placement: 'home' })}
@@ -31,10 +50,26 @@ const HomePage: React.FC = () => {
 				<p className="text-xl text-muted text-pretty">
 					A free online editor for creating behavior trees for games, AI, and robotics.
 				</p>
-				<p className="mt-4 text-sm text-faint text-pretty">
-					New to behavior trees? Read the{' '}
-					<a href="/learn/" className="text-accent-soft hover:underline">guides</a> or open an
-					example:{' '}
+
+				<div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+					<Link
+						to="/editor"
+						onClick={() => track('home_cta_clicked', { cta: project ? 'continue_project' : 'create_project' })}
+						className="inline-flex min-w-0 items-center justify-center rounded-md border border-accent bg-transparent px-4 py-2 text-accent-soft transition hover:bg-accent/15"
+					>
+						<span className="truncate">{project ? `Continue “${project.name}”` : 'Create Project'}</span>
+					</Link>
+					<a
+						href="/learn/"
+						onClick={() => track('home_cta_clicked', { cta: 'guides' })}
+						className="inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-transparent px-4 py-2 text-fg transition hover:bg-fg/7"
+					>
+						Read the guides
+					</a>
+				</div>
+
+				<p className="mt-5 text-sm text-faint text-pretty">
+					Or open an example:{' '}
 					<a href="/?example=enemy-patrol" className="text-accent-soft hover:underline">enemy patrol AI</a>,{' '}
 					<a href="/?example=open-the-door" className="text-accent-soft hover:underline">selector vs sequence</a>,{' '}
 					<a href="/?example=robot-pick-and-place" className="text-accent-soft hover:underline">robot pick &amp; place</a>.
@@ -43,90 +78,16 @@ const HomePage: React.FC = () => {
 				</p>
 			</div>
 
-			<div className="grid md:grid-cols-2 gap-8 mb-12">
-				<div className="card">
-					<h2 className="text-2xl font-medium mb-4 text-fg">Getting Started</h2>
-					<ul className="space-y-3 text-muted">
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Create a new project or open an existing one
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Design your behavior trees visually
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Export trees to use in your game engine
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							{CLOUD_ENABLED
-								? 'No account needed — everything saves in your browser. Sign in only if you want your projects synced across machines.'
-								: 'No account needed — everything saves in your browser'}
-						</li>
-					</ul>
+			<TreePreview />
 
-					<div className="mt-6 flex flex-col sm:flex-row gap-4">
-						<Link
-							to="/editor"
-							className="inline-flex justify-center items-center px-4 py-2 border border-accent bg-transparent text-accent-soft rounded-md hover:bg-accent/15 transition"
-						>
-							{project ? 'Open Editor' : 'Create Project'}
-						</Link>
-						<Link
-							to="/projects"
-							className="inline-flex justify-center items-center px-4 py-2 border border-border bg-transparent text-fg rounded-md hover:bg-fg/7 transition"
-						>
-							Browse Projects
-						</Link>
+			<div className="grid gap-8 sm:grid-cols-3">
+				{REASONS.map((reason) => (
+					<div key={reason.title}>
+						<h2 className="mb-2 text-base font-medium text-fg">{reason.title}</h2>
+						<p className="text-sm text-muted text-pretty">{reason.body}</p>
 					</div>
-				</div>
-
-				<div className="card">
-					<h2 className="text-2xl font-medium mb-4 text-fg">Features</h2>
-					<ul className="space-y-3 text-muted">
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Visual node-based editor
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Standard behavior tree nodes (sequence, selector, etc.)
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Custom node creation
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							Multiple trees per project
-						</li>
-						<li className="flex items-start">
-							<span className="mr-2 text-accent-soft">•</span>
-							JSON export/import
-						</li>
-					</ul>
-				</div>
+				))}
 			</div>
-
-			{project && (
-				<div>
-					<h2 className="mb-4 text-2xl font-medium">Current Project</h2>
-					<div className="card mb-4">
-						<h3 className="text-xl font-medium">{project.name}</h3>
-						<p className="text-muted">{project.description}</p>
-						<div className="mt-4">
-							<Link
-								to="/editor"
-								className="inline-flex justify-center items-center px-4 py-2 border border-accent bg-transparent text-accent-soft rounded-md hover:bg-accent/15 transition"
-							>
-								Open Editor
-							</Link>
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 };
