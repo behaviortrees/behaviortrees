@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { track } from '../../lib/analytics';
 import { CLOUD_ENABLED } from '../../lib/auth';
+import { LATEST_RELEASE } from '../../lib/changelog';
 import { useProjectStore } from '../../stores/useProjectStore';
 
 const HomePage: React.FC = () => {
@@ -11,6 +13,17 @@ const HomePage: React.FC = () => {
 	return (
 		<div className="max-w-4xl">
 			<div className="mb-14 max-w-2xl">
+				<Link
+					to="/changelog"
+					onClick={() => track('whats_new_clicked', { release: LATEST_RELEASE.id, placement: 'home' })}
+					className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-border px-3 py-1 text-[13px] text-muted transition-colors hover:border-accent hover:text-fg"
+				>
+					<span className="shrink-0 rounded-full bg-accent-wash px-2 py-px text-xs font-medium text-accent-soft">
+						New
+					</span>
+					<span className="truncate">{LATEST_RELEASE.title}</span>
+					<span aria-hidden="true" className="shrink-0 text-accent-soft">→</span>
+				</Link>
 				<div className="kicker mb-3 text-accent-soft">Behavior trees</div>
 				<h1 className="mb-4 text-4xl font-medium tracking-[-0.02em] text-fg">
 					Behavior Tree Editor

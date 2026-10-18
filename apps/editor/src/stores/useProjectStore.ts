@@ -45,6 +45,7 @@ interface ProjectState {
   // Block operations
   createBlock: (treeId: string, nodeName: string, position: { x: number, y: number }) => string;
   updateBlock: (treeId: string, blockId: string, updates: Partial<Block>) => void;
+  moveBlocks: (treeId: string, positions: Record<string, { x: number, y: number }>) => void;
   deleteBlock: (treeId: string, blockId: string) => void;
   
   // Connection operations
@@ -56,7 +57,7 @@ interface ProjectState {
   cutBlocks: (treeId: string, blockIds: string[]) => void;
   pasteClipboard: (treeId: string) => string[];
   duplicateBlocks: (treeId: string, blockIds: string[]) => string[];
-  organize: (treeId: string, layout?: TreeLayout) => void;
+  organize: (treeId: string, layout?: TreeLayout, orderLayout?: TreeLayout) => void;
   
   // Project operations
   saveProject: () => boolean;
@@ -434,6 +435,31 @@ export const useProjectStore = create<ProjectState>()(
       });
     },
     
+    // Commit a drag of one or more blocks as a single undo step
+    moveBlocks: (treeId, positions) => {
+      set(state => {
+        const tree = state.project?.trees[treeId];
+        if (!state.project || !tree) return;
+        const moves = Object.entries(positions).filter(([id, position]) => {
+          const block = tree.blocks[id];
+          return block && !isNaN(position.x) && !isNaN(position.y) &&
+            (block.position.x !== position.x || block.position.y !== position.y);
+        });
+        if (moves.length === 0) return;
+
+        state.undoStack.push(JSON.parse(JSON.stringify(state.project)));
+        state.redoStack = [];
+
+        moves.forEach(([id, position]) => {
+          tree.blocks[id].position = {
+            x: Math.max(-10000, Math.min(10000, position.x)),
+            y: Math.max(-10000, Math.min(10000, position.y)),
+          };
+        });
+        state.project.updatedAt = timestamp();
+      });
+    },
+
     deleteBlock: (treeId, blockId) => {
       set(state => {
         if (state.project && state.project.trees[treeId] && state.project.trees[treeId].blocks[blockId]) {
@@ -601,7 +627,7 @@ export const useProjectStore = create<ProjectState>()(
       return created;
     },
 
-    organize: (treeId, layout = 'horizontal') => {
+    organize: (treeId, layout = 'horizontal', orderLayout = layout) => {
       set(state => {
         const tree = state.project?.trees[treeId];
         if (!state.project || !tree) return;
@@ -609,7 +635,7 @@ export const useProjectStore = create<ProjectState>()(
         state.undoStack.push(JSON.parse(JSON.stringify(state.project)));
         state.redoStack = [];
 
-        organizeTree(tree, layout);
+        organizeTree(tree, layout, false, orderLayout);
         state.project.updatedAt = timestamp();
       });
     },

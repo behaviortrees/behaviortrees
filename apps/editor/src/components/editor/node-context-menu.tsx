@@ -1,12 +1,14 @@
 import React from 'react';
-import { NodeProps } from 'reactflow';
-import { Trash2, PenLine } from 'lucide-react';
+import { NodeProps, useReactFlow } from 'reactflow';
+import { GitFork, PenLine, Trash2 } from 'lucide-react';
+import { descendantIds } from '../../lib/behavior/organize';
 import { useProjectStore } from '../../stores/useProjectStore';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuTrigger
 } from '../ui/context-menu';
 
@@ -19,6 +21,7 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ node, children }) => 
   const selectedTreeId = useProjectStore((state) => state.project?.selectedTreeId);
   const deleteBlock = useProjectStore((state) => state.deleteBlock);
   const updateBlock = useProjectStore((state) => state.updateBlock);
+  const { setNodes } = useReactFlow();
 
   const handleDelete = () => {
     if (selectedTreeId) {
@@ -35,6 +38,14 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ node, children }) => 
     }
   };
 
+  // Select this node and everything below it, so one drag moves the branch
+  const handleSelectBranch = () => {
+    const tree = selectedTreeId && useProjectStore.getState().project?.trees[selectedTreeId];
+    if (!tree) return;
+    const branch = new Set([node.id, ...descendantIds(tree, [node.id])]);
+    setNodes(nodes => nodes.map(n => ({ ...n, selected: branch.has(n.id) })));
+  };
+
   // Prevent context menu for root nodes
   if (node.data.category === 'root') {
     return <>{children}</>;
@@ -47,6 +58,11 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ node, children }) => 
         <ContextMenuItem onClick={handleRename}>
           <PenLine className="mr-2 h-4 w-4" />
           Rename
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleSelectBranch}>
+          <GitFork className="mr-2 h-4 w-4" />
+          Select branch
+          <ContextMenuShortcut>Alt+Drag</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem

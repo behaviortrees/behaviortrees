@@ -13,6 +13,8 @@ import AdminPage from './pages/admin/admin-page';
 import PricingPage from './pages/pricing/pricing-page';
 import PrivacyPage from './pages/privacy/privacy-page';
 import ProductAnalyticsTracker from './components/analytics/product-analytics-tracker';
+import WhatsNewNotice from './components/whats-new-notice';
+import ChangelogPage from './pages/changelog/changelog-page';
 
 import './index.css';
 
@@ -33,6 +35,7 @@ function App() {
 			<Toaster position="bottom-right" theme={resolved} />
 			<ExampleLoader />
 			<ProductAnalyticsTracker />
+			<WhatsNewNotice />
 			<AppLayout>
 				<Routes>
 					<Route path="/" element={<HomePage />} />
@@ -41,6 +44,7 @@ function App() {
 					<Route path="/settings" element={<SettingsPage />} />
 					<Route path="/pricing" element={<PricingPage />} />
 					<Route path="/privacy" element={<PrivacyPage />} />
+					<Route path="/changelog" element={<ChangelogPage />} />
 					<Route path="/admin" element={<AdminPage />} />
 				</Routes>
 			</AppLayout>

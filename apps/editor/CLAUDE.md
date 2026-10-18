@@ -91,6 +91,15 @@ To prevent nodes from jumping when adding/editing nodes:
    - It only updates nodes when actual data (excluding position) changes
    - This prevents cascading updates that could cause position jumps
 
+5. **Committing Moves**:
+   - ReactFlow 11's drag-end change carries no `position`, so drags are committed in `onNodeDragStop` / `onSelectionDragStop`; keyboard nudges come through `handleNodesChange`
+   - All paths go through `commitPositions` → the store's `moveBlocks`, one undo step per move
+   - Alt+drag moves a node's whole branch (descendants follow by the same delta)
+
+6. **Sibling Order**:
+   - Children run in on-screen order: top-to-bottom in horizontal layout, left-to-right in vertical
+   - `compareSiblings` / `childIdsInOrder` in `lib/behavior/organize.ts` is the single rule used by organize, export and the edge order badges
+
 When modifying node positions or editing node operations, make sure to:
 - Update the position cache when directly modifying node positions
 - Use rounded position values (Math.round(position.x / 15) * 15)

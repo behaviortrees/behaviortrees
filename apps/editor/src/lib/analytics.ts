@@ -82,6 +82,9 @@ export type AnalyticsEventMap = {
     method: 'copy' | 'download';
   };
   custom_node_created: { category: string };
+  whats_new_shown: { release: string };
+  whats_new_clicked: { release: string; placement: 'notice' | 'home' };
+  whats_new_dismissed: { release: string };
 };
 
 function debugEnabled(): boolean {

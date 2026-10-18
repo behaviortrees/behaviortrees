@@ -99,6 +99,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 								Learn behavior trees
 							</a>{' '}
 							·{' '}
+							<Link to="/changelog" className="text-accent-soft hover:underline">
+								What&apos;s new
+							</Link>{' '}
+							·{' '}
 							<Link to="/pricing" className="text-accent-soft hover:underline">
 								Pricing
 							</Link>{' '}
