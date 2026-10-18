@@ -5,3 +5,17 @@ packages:
   # keeps its own npm lockfile (with the graceful-fs override) because the
   # gulp 3 toolchain predates pnpm-style layouts. Never run pnpm in there.
   - '!apps/editor-classic'
+
+# Force patched versions of transitives that their parents pin below the
+# Dependabot fix.
+overrides:
+  sharp: ^0.35.4
+  undici@5: ^5.29.0
+  js-yaml@4: ^4.3.2
+  minimatch@10: ^10.2.3
+  path-to-regexp@6: ^6.3.0
+  smol-toml: ^1.7.1
+  ajv@8: ^8.18.0
+  # Only reached through @vercel/node, which the editor imports for types only.
+  '@fastify/busboy@2': ^3.2.1
+  esbuild@0.27: ^0.28.1

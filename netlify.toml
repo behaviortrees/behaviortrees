@@ -2,7 +2,8 @@
 #
 # Overrides any Node version pinned in the Netlify UI (the site was pinned to
 # Node 8 from the original behavior3 era). Gulp 3 needs Node <= 22 (see the
-# graceful-fs override in apps/editor-classic/package.json); Astro needs >= 20.
+# graceful-fs override in apps/editor-classic/package.json); Astro 7 needs
+# >= 22.22, which NODE_VERSION "22" satisfies by resolving to the latest 22.x.
 #
 # With pnpm-lock.yaml at the repo root, Netlify's automatic install runs
 # `pnpm install` (version pinned via "packageManager" in package.json). The
