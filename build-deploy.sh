@@ -9,7 +9,7 @@
 # Upload the deploy/ directory to your static host.
 #
 # Requirements: Node >= 16 for gulp (see "overrides" in
-# apps/editor-classic/package.json), Node >= 20 for Astro + pnpm. If you use
+# apps/editor-classic/package.json), Node >= 22.22 for Astro 7 + pnpm. If you use
 # nvm, this script picks versions itself.
 
 set -euo pipefail
@@ -47,8 +47,8 @@ run_with_node 14 16 ./node_modules/.bin/gulp build
 cd "$ROOT"
 
 echo "==> Building content site (Astro)"
-[ -d node_modules ] || run_with_node 20 99 pnpm install --frozen-lockfile
-run_with_node 20 99 pnpm exec turbo run build --filter=@behaviortrees/site
+[ -d node_modules ] || run_with_node 22 99 pnpm install --frozen-lockfile
+run_with_node 22 99 pnpm exec turbo run build --filter=@behaviortrees/site
 
 echo "==> Assembling deploy/"
 rm -rf deploy
