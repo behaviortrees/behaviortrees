@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_lib/http.js';
 
 // Smoke test that functions are routed ahead of the SPA catch-all rewrite:
 // /api/health must return JSON, never index.html.
