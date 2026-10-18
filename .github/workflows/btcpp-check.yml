@@ -1,0 +1,29 @@
+# Loads the editor's BehaviorTree.CPP exports with the real library (ROS 2
+# Jazzy's v4 and Humble's v3.8) via apps/editor/scripts/btcpp-check. Docker
+# images are large, so this only runs when the BT.CPP code or corpus changes.
+name: BT.CPP check
+
+on:
+  pull_request:
+    paths:
+      - apps/editor/src/lib/behavior/btcpp*.ts
+      - apps/editor/src/lib/behavior/b3.ts
+      - apps/editor/src/lib/behavior/organize.ts
+      - apps/editor/scripts/btcpp-check/**
+      - packages/examples/trees/**
+      - .github/workflows/btcpp-check.yml
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @behaviortrees/editor check:btcpp

@@ -12,7 +12,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:btcpp": "bash scripts/btcpp-check/run.sh"
   },
   "dependencies": {
     "@clerk/backend": "^3.25.0",
