@@ -15,6 +15,7 @@ globalThis.localStorage = {
 } as Storage;
 
 import { treeToB3 } from '../lib/behavior/b3';
+import { Node, Tree } from '../types';
 import { descendantIds } from '../lib/behavior/organize';
 import { useProjectStore } from './useProjectStore';
 
@@ -379,5 +380,83 @@ describe('updateNode rename', () => {
     store().updateNode('A', { name: 'Wait' });
     expect(store().project!.nodes.A).toBeDefined();
     expect(store().project!.nodes.Wait.isDefault).toBe(true);
+  });
+});
+
+describe('BehaviorTree.CPP imports', () => {
+  const node = (name: string, category: Node['category'], extra: Partial<Node> = {}): Node => ({
+    name, title: name, category, description: '', properties: {}, isDefault: false, ...extra,
+  });
+
+  // A one-node tree as parseBtcppXml would build it
+  const importedTree = (title: string, leaf: string, category: Node['category'] = 'action'): Tree => ({
+    id: `incoming-${title}`,
+    title,
+    blocks: {
+      root: { id: 'root', name: 'Root', title, category: 'root', properties: {}, position: { x: 0, y: 0 } },
+      leaf: { id: 'leaf', name: leaf, title: leaf, category, properties: {}, position: { x: 200, y: 0 } },
+    },
+    connections: { c: { id: 'c', source: 'root', target: 'leaf' } },
+    rootId: 'root',
+    viewport: { x: 0, y: 0, zoom: 1 },
+  });
+
+  it('adds trees and selects the main one', () => {
+    const result = store().addImportedTrees(
+      [importedTree('MainTree', 'Gate'), importedTree('Helper', 'Gate')],
+      { Gate: node('Gate', 'action') },
+      {},
+      'incoming-Helper',
+    );
+    const project = store().project!;
+    expect(result).toEqual({ replaced: [], skipped: [] });
+    expect(project.trees[project.selectedTreeId!].title).toBe('Helper');
+    expect(project.nodes.Gate.category).toBe('action');
+  });
+
+  it('replaces a tree with the same title in place, as one undo step', () => {
+    store().addImportedTrees([importedTree('MainTree', 'Old')], { Old: node('Old', 'action') }, {});
+    const id = store().project!.selectedTreeId!;
+    const count = Object.keys(store().project!.trees).length;
+
+    const result = store().addImportedTrees([importedTree('MainTree', 'New')], { New: node('New', 'action') }, {});
+    const project = store().project!;
+    expect(result.replaced).toEqual(['MainTree']);
+    expect(Object.keys(project.trees)).toHaveLength(count);
+    expect(project.selectedTreeId).toBe(id);
+    expect(Object.values(project.trees[id].blocks).map((b) => b.name)).toContain('New');
+
+    store().undo();
+    expect(Object.values(store().project!.trees[id].blocks).map((b) => b.name)).toContain('Old');
+  });
+
+  it('lets a node model correct an earlier guess, blocks included', () => {
+    store().addImportedTrees([importedTree('Nav', 'RateLimit', 'action')], { RateLimit: node('RateLimit', 'action', { properties: { hz: '2.0' } }) }, {});
+
+    const ports = { hz: { direction: 'input' as const, type: 'double', default: '10' } };
+    const result = store().mergeNodeModels({ RateLimit: node('RateLimit', 'decorator', { ports, properties: { hz: '10' } }) });
+
+    const project = store().project!;
+    expect(result.skipped).toEqual([]);
+    expect(project.nodes.RateLimit.category).toBe('decorator');
+    expect(project.nodes.RateLimit.ports).toEqual(ports);
+    // The value the user already had wins over the model's default
+    expect(project.nodes.RateLimit.properties.hz).toBe('2.0');
+    const block = Object.values(project.trees[project.selectedTreeId!].blocks).find((b) => b.name === 'RateLimit')!;
+    expect(block.category).toBe('decorator');
+  });
+
+  it('never changes default nodes', () => {
+    const { skipped } = store().mergeNodeModels({ Wait: node('Wait', 'action', { properties: { wait_duration: '1' } }) });
+    expect(skipped).toEqual(['Wait']);
+    expect(store().project!.nodes.Wait.isDefault).toBe(true);
+    expect(store().project!.nodes.Wait.properties).not.toHaveProperty('wait_duration');
+  });
+
+  it('updates block categories when a node is edited', () => {
+    store().createNode({ name: 'Gate', category: 'action', properties: {} });
+    const gate = addBlock('Gate');
+    store().updateNode('Gate', { category: 'condition' });
+    expect(store().project!.trees[treeId()].blocks[gate].category).toBe('condition');
   });
 });

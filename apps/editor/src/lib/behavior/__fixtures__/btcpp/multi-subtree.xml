@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A v4 file in Groot2's style: two trees, explicit and compact syntax -->
+<root BTCPP_format="4" main_tree_to_execute="PickAndPlace">
+  <include path="./shared/recovery.xml"/>
+  <BehaviorTree ID="PickAndPlace">
+    <Sequence name="Pick then place">
+      <Script code="attempts := 0"/>
+      <SubTree ID="Grasp" target="{object_pose}" _autoremap="true"/>
+      <Action ID="MoveArm" goal="{place_pose}" speed="0.5" _skipIf="already_placed"/>
+      <Condition ID="IsGripperOpen"/>
+    </Sequence>
+  </BehaviorTree>
+  <BehaviorTree ID="Grasp">
+    <Fallback>
+      <RetryUntilSuccessful num_attempts="3">
+        <CloseGripper force="12.5"/>
+      </RetryUntilSuccessful>
+      <AlwaysFailure name="Give up"/>
+    </Fallback>
+  </BehaviorTree>
+  <TreeNodesModel>
+    <Action ID="MoveArm">
+      <input_port name="goal" type="Pose">Where to move the end effector</input_port>
+      <input_port name="speed" type="double" default="1.0"/>
+    </Action>
+    <Action ID="CloseGripper">
+      <input_port name="force" type="double" default="10"/>
+      <output_port name="grip_width" type="double"/>
+    </Action>
+    <SubTree ID="Grasp">
+      <input_port name="target"/>
+    </SubTree>
+  </TreeNodesModel>
+</root>

@@ -17,12 +17,23 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { customNodesToB3, projectToB3, treeToB3 } from '../../lib/behavior/b3';
+import { BtcppIssue, nodesToBtcpp, projectToBtcpp, treeToBtcpp } from '../../lib/behavior/btcpp';
 import { track } from '../../lib/analytics';
 import { recordActivation } from '../../lib/product-metrics';
 import { toast } from 'sonner';
 import { CheckIcon, DownloadIcon, ClipboardIcon, ChevronDownIcon } from 'lucide-react';
 
 export type ExportType = 'project' | 'tree' | 'nodes';
+
+type ExportFormat = 'json' | 'compact' | 'btcpp_v4' | 'btcpp_v3';
+
+const isXml = (format: ExportFormat) => format === 'btcpp_v4' || format === 'btcpp_v3';
+
+const ISSUE_COLOR: Record<BtcppIssue['level'], string> = {
+	error: 'text-danger',
+	warning: 'text-warning',
+	info: 'text-muted',
+};
 
 interface ExportModalProps {
 	open: boolean;
@@ -36,7 +47,13 @@ const ExportModal: React.FC<ExportModalProps> = ({
 	exportType = 'project',
 }) => {
 	const [type, setType] = useState<ExportType>(exportType);
-	const [format, setFormat] = useState<'json' | 'compact'>('json');
+
+	// The dialog stays mounted, so take the requested type each time it opens
+	useEffect(() => {
+		if (open) setType(exportType);
+	}, [open, exportType]);
+	const [format, setFormat] = useState<ExportFormat>('json');
+	const [issues, setIssues] = useState<BtcppIssue[]>([]);
 	const [copied, setCopied] = useState(false);
 	const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -53,8 +70,26 @@ const ExportModal: React.FC<ExportModalProps> = ({
 		}
 
 		let data: unknown;
+		setIssues([]);
 
 		try {
+			if (isXml(format)) {
+				const options = { version: format === 'btcpp_v3' ? 3 : 4 } as const;
+				if (type === 'tree' && (!selectedTreeId || !project.trees[selectedTreeId])) {
+					setExportData('No tree selected');
+					return;
+				}
+				const result =
+					type === 'project'
+						? projectToBtcpp(project, options)
+						: type === 'tree'
+							? treeToBtcpp(project, selectedTreeId!, options)
+							: nodesToBtcpp(project, options);
+				setExportData(result.xml);
+				setIssues(result.issues);
+				return;
+			}
+
 			if (type === 'project') {
 				data = projectToB3(project);
 			} else if (type === 'tree') {
@@ -109,22 +144,23 @@ const ExportModal: React.FC<ExportModalProps> = ({
 	// Handle download
 	const handleDownload = () => {
 		try {
-			const blob = new Blob([exportData], { type: 'application/json' });
+			const extension = isXml(format) ? 'xml' : 'json';
+			const blob = new Blob([exportData], { type: isXml(format) ? 'application/xml' : 'application/json' });
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 
 			let fileName = '';
 
 			if (type === 'project' && project) {
-				fileName = `${project.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}.json`;
+				fileName = `${project.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}.${extension}`;
 			} else if (type === 'tree' && selectedTreeId && project?.trees[selectedTreeId]) {
 				fileName = `tree_${project.trees[selectedTreeId].title
 					.replace(/\s+/g, '_')
-					.toLowerCase()}_${Date.now()}.json`;
+					.toLowerCase()}_${Date.now()}.${extension}`;
 			} else if (type === 'nodes') {
-				fileName = `custom_nodes_${Date.now()}.json`;
+				fileName = `custom_nodes_${Date.now()}.${extension}`;
 			} else {
-				fileName = `${type}_export_${Date.now()}.json`;
+				fileName = `${type}_export_${Date.now()}.${extension}`;
 			}
 
 			a.href = url;
@@ -169,14 +205,18 @@ const ExportModal: React.FC<ExportModalProps> = ({
 						</DropdownMenu>
 					</DialogTitle>
 					<DialogDescription>
-						Export your {type} as JSON or download it as a file.
+						Export your {type} as behavior3 JSON or as BehaviorTree.CPP XML for ROS 2 and Groot2.
 					</DialogDescription>
 				</DialogHeader>
 
-				<Tabs defaultValue="json" onValueChange={(value) => setFormat(value as 'json' | 'compact')}>
-					<TabsList className="grid w-full grid-cols-2">
-						<TabsTrigger value="json">Pretty</TabsTrigger>
-						<TabsTrigger value="compact">Compact</TabsTrigger>
+				<Tabs value={format} onValueChange={(value) => setFormat(value as ExportFormat)}>
+					<TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+						<TabsTrigger value="json">JSON</TabsTrigger>
+						<TabsTrigger value="compact">Compact JSON</TabsTrigger>
+						<TabsTrigger value="btcpp_v4">BT.CPP v4</TabsTrigger>
+						<TabsTrigger value="btcpp_v3" title="BehaviorTree.CPP 3.8, used by ROS 2 Humble">
+							BT.CPP v3
+						</TabsTrigger>
 					</TabsList>
 
 					<div className="mt-4 relative">
@@ -187,6 +227,24 @@ const ExportModal: React.FC<ExportModalProps> = ({
 							value={exportData}
 						/>
 					</div>
+
+					{issues.length > 0 && (
+						<div className="mt-3 max-h-[140px] overflow-y-auto rounded-md border border-border p-3 text-[13px]">
+							{issues.some((i) => i.level === 'error') && (
+								<p className="mb-2 font-medium text-danger">
+									BehaviorTree.CPP will reject this file until the errors are fixed.
+								</p>
+							)}
+							<ul className="space-y-1">
+								{issues.map((issue) => (
+									<li key={issue.message} className={ISSUE_COLOR[issue.level]}>
+										<span className="mr-1.5 font-medium capitalize">{issue.level}:</span>
+										{issue.message}
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
 				</Tabs>
 
 				<DialogFooter className="sm:justify-between">

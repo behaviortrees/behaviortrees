@@ -11,6 +11,7 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToTree, parseImportedJson } from '../../lib/behavior/b3';
+import { isLikelyXml, parseBtcppXml, summarizeIssues } from '../../lib/behavior/btcpp';
 import { track } from '../../lib/analytics';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { toast } from 'sonner';
@@ -72,7 +73,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 				store.addNodes(imported.nodes);
 				toast.success(`${Object.keys(imported.nodes).length} node(s) imported`);
 			}
-			track('import', { type: imported.kind, source });
+			track('import', { type: imported.kind, source, format: 'b3' });
 			store.saveProject();
 			onOpenChange(false);
 			return true;
@@ -83,13 +84,72 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 		}
 	};
 
-	const handlePasteImport = () => {
-		try {
-			const json = JSON.parse(pasted);
-			if (importJson(json, 'paste')) setPasted('');
-		} catch {
-			toast.error('Not valid JSON — check the pasted text');
+	// BehaviorTree.CPP / Nav2 XML: trees join the open project, replacing any
+	// tree with the same ID; a TreeNodesModel-only file updates the palette
+	const importXml = (text: string, source: 'paste' | 'file'): boolean => {
+		const store = useProjectStore.getState();
+		if (!store.project) {
+			toast.error('Open a project before importing');
+			return false;
 		}
+		try {
+			const imported = parseBtcppXml(text, store.project.nodes);
+			const notes: string[] = [];
+			let title: string;
+
+			if (imported.kind === 'nodes') {
+				const { skipped } = store.mergeNodeModels(imported.models);
+				const count = Object.keys(imported.models).length - skipped.length;
+				title = `${count} node${count === 1 ? '' : 's'} imported`;
+				if (skipped.length > 0) notes.push(`Kept the built-in ${skipped.join(', ')} unchanged`);
+			} else {
+				const { replaced, skipped } = store.addImportedTrees(
+					imported.trees,
+					imported.nodes,
+					imported.models,
+					imported.mainTreeId
+				);
+				const main = imported.trees.find((t) => t.id === imported.mainTreeId) ?? imported.trees[0];
+				title =
+					imported.trees.length === 1
+						? `Tree "${main.title}" ${replaced.length > 0 ? 'updated' : 'added'}`
+						: `${imported.trees.length} trees added`;
+				if (imported.trees.length > 1 && replaced.length > 0) notes.push(`Updated ${replaced.join(', ')}`);
+				if (skipped.length > 0) notes.push(`Kept the built-in ${skipped.join(', ')} unchanged`);
+				setProjectOrigin(store.project.id, 'import');
+			}
+
+			const details = [...notes, summarizeIssues(imported.issues)].filter(Boolean).join('\n');
+			const serious = imported.issues.some((i) => i.level !== 'info');
+			(serious ? toast.warning : toast.success)(title, {
+				description: details ? <span className="whitespace-pre-line">{details}</span> : undefined,
+			});
+
+			track('import', { type: imported.kind, source, format: 'btcpp' });
+			store.saveProject();
+			onOpenChange(false);
+			return true;
+		} catch (error) {
+			console.error('Failed to import XML', error);
+			toast.error(error instanceof Error ? error.message : 'Not a valid BehaviorTree.CPP file');
+			return false;
+		}
+	};
+
+	const importText = (text: string, source: 'paste' | 'file'): boolean => {
+		if (isLikelyXml(text)) return importXml(text, source);
+		let json: unknown;
+		try {
+			json = JSON.parse(text);
+		} catch {
+			toast.error('Not valid JSON or XML. Check the file contents.');
+			return false;
+		}
+		return importJson(json, source);
+	};
+
+	const handlePasteImport = () => {
+		if (importText(pasted, 'paste')) setPasted('');
 	};
 
 	const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,11 +157,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = (event) => {
-			try {
-				importJson(JSON.parse(event.target?.result as string), 'file');
-			} catch {
-				toast.error('Not a valid behavior tree file');
-			}
+			importText(event.target?.result as string, 'file');
 		};
 		reader.readAsText(file);
 		e.target.value = '';
@@ -127,14 +183,15 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 				<DialogHeader>
 					<DialogTitle className="text-fg">Import</DialogTitle>
 					<DialogDescription>
-						Add a tree to this project from an example, pasted JSON, or a file.
+						Add a tree to this project from an example, pasted text, or a file. Reads behavior3 JSON and
+						BehaviorTree.CPP / ROS 2 Nav2 XML.
 					</DialogDescription>
 				</DialogHeader>
 
 				<Tabs defaultValue="examples">
 					<TabsList className="grid w-full grid-cols-3">
 						<TabsTrigger value="examples">Examples</TabsTrigger>
-						<TabsTrigger value="paste">Paste JSON</TabsTrigger>
+						<TabsTrigger value="paste">Paste</TabsTrigger>
 						<TabsTrigger value="file">File</TabsTrigger>
 					</TabsList>
 
@@ -162,14 +219,14 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 						<textarea
 							value={pasted}
 							onChange={(e) => setPasted(e.target.value)}
-							placeholder='Paste behavior tree JSON here — a project, a tree, or nodes…'
+							placeholder="Paste behavior3 JSON or BehaviorTree.CPP / Nav2 XML: a project, a tree, or nodes…"
 							className="h-[240px] w-full resize-none font-mono text-sm"
 							autoFocus
 						/>
 						<div className="mt-3 flex justify-end">
 							<Button onClick={handlePasteImport} disabled={!pasted.trim()} className="gap-2">
 								<ClipboardPaste className="h-4 w-4" />
-								Import pasted JSON
+								Import pasted text
 							</Button>
 						</div>
 					</TabsContent>
@@ -180,12 +237,12 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 							className="flex w-full flex-col items-center gap-2 rounded-md border border-dashed border-border p-8 text-muted transition-colors hover:border-accent hover:text-accent-soft"
 						>
 							<FileUp className="h-6 w-6" />
-							<span className="text-sm">Choose a .json file…</span>
+							<span className="text-sm">Choose a .json or .xml file…</span>
 						</button>
 						<input
 							ref={fileInputRef}
 							type="file"
-							accept=".json,application/json"
+							accept=".json,.xml,application/json,application/xml,text/xml"
 							className="hidden"
 							onChange={handleFileImport}
 						/>

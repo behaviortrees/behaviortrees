@@ -7,6 +7,7 @@ import {
   B3Tree,
   b3ToProject,
   b3ToTree,
+  customNodesToB3,
   parseImportedJson,
   projectToB3,
   treeToB3,
@@ -201,5 +202,34 @@ describe('parseImportedJson', () => {
       const names = Object.values(tree.blocks).map((b) => b.name).sort();
       expect(names).toEqual(['Root', 'Sequence', 'Wait']);
     }
+  });
+});
+
+describe('port metadata', () => {
+  it('survives a project save and reload', () => {
+    const project = b3ToProject({ id: 'p', name: 'Ports', trees: [] });
+    project.nodes.BackUp = {
+      name: 'BackUp',
+      category: 'action',
+      properties: { backup_dist: '0.15' },
+      ports: {
+        backup_dist: { direction: 'input', type: 'double', default: '0.15', description: 'Distance (m).' },
+        error_code_id: { direction: 'output', type: 'uint16' },
+      },
+      isDefault: false,
+    };
+
+    const reloaded = parseImportedJson(JSON.parse(JSON.stringify(projectToB3(project))));
+    expect(reloaded.kind).toBe('project');
+    if (reloaded.kind === 'project') {
+      expect(reloaded.project.nodes.BackUp.ports).toEqual(project.nodes.BackUp.ports);
+      expect(Object.keys(reloaded.project.nodes.BackUp.ports!)).toEqual(['backup_dist', 'error_code_id']);
+    }
+  });
+
+  it('is left out of nodes that have none', () => {
+    const project = b3ToProject({ id: 'p', name: 'Plain', trees: [] });
+    project.nodes.Patrol = { name: 'Patrol', category: 'action', properties: {}, isDefault: false };
+    expect(customNodesToB3(project)[0]).not.toHaveProperty('ports');
   });
 });
