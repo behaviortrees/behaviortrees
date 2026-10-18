@@ -26,7 +26,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 					: 'flex min-h-screen flex-col bg-base text-fg'
 			}
 		>
-			<header className="flex h-[54px] flex-none items-center gap-3 border-b border-divider px-3 sm:gap-6 sm:px-6 lg:gap-8">
+			<header className="sticky top-0 z-10 flex h-[54px] flex-none items-center bg-base gap-3 border-b border-divider px-3 sm:gap-6 sm:px-6 lg:gap-8">
 				<Link to="/" className="flex shrink-0 items-center gap-3">
 					<img src="/imgs/logo.svg" alt="" className="h-[22px] w-[22px] rounded-[5px]" />
 					<span className="hidden text-[15px] font-medium tracking-[-0.01em] lg:inline">
