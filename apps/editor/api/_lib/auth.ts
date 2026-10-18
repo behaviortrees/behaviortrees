@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './http.js';
 import { verifyToken } from '@clerk/backend';
 
 // Verifies the Clerk session token from the Authorization header. Bearer-only

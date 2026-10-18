@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_lib/http.js';
 import { upsertCommercialInterest } from './_lib/db.js';
 import { validateCommercialInterest } from './_lib/interest-validate.js';
 
