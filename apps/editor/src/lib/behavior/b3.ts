@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Block, Connection, Node, NodeCategory, Project, Tree } from '../../types';
+import { Block, Connection, Node, NodeCategory, NodePort, Project, Tree } from '../../types';
 import { DEFAULT_NODES } from './defaults';
 import { childIdsInOrder, organizeTree, readTreeLayout, TreeLayout } from './organize';
 import { deserializeProject } from './serializer';
@@ -22,6 +22,8 @@ export type B3NodeTemplate = {
   title?: string;
   description?: string;
   properties?: Record<string, unknown>;
+  // BehaviorTree.CPP port metadata; the old editor ignores the field
+  ports?: Record<string, NodePort>;
 };
 
 export type B3NodeSpec = {
@@ -141,6 +143,8 @@ export function customNodesToB3(project: Project): B3NodeTemplate[] {
       title: node.title,
       description: node.description,
       properties: { ...node.properties },
+      // Omitted when absent so behavior3-only files stay byte-identical
+      ...(node.ports ? { ports: { ...node.ports } } : {}),
     }));
 }
 
@@ -163,6 +167,18 @@ export function projectToB3(project: Project): B3Project {
 // Import: behavior3 -> internal model
 // ---------------------------------------------------------------------------
 
+function templateToNode(t: B3NodeTemplate): Node {
+  return {
+    name: t.name,
+    category: t.category ?? 'action',
+    title: t.title,
+    description: t.description,
+    properties: { ...(t.properties ?? {}) },
+    ...(t.ports ? { ports: { ...t.ports } } : {}),
+    isDefault: false,
+  };
+}
+
 function inferCategory(spec: B3NodeSpec): NodeCategory {
   if (spec.children) return 'composite';
   if (spec.child !== undefined) return 'decorator';
@@ -176,14 +192,7 @@ function collectNodeTemplates(data: B3Tree, known: Record<string, Node>): Record
 
   (data.custom_nodes ?? []).forEach((t) => {
     if (!known[t.name] && !nodes[t.name]) {
-      nodes[t.name] = {
-        name: t.name,
-        category: t.category,
-        title: t.title,
-        description: t.description,
-        properties: { ...(t.properties ?? {}) },
-        isDefault: false,
-      };
+      nodes[t.name] = templateToNode(t);
     }
   });
 
@@ -287,14 +296,7 @@ export function b3ToProject(data: B3Project): Project {
 
   (data.custom_nodes ?? []).forEach((t) => {
     if (!project.nodes[t.name]) {
-      project.nodes[t.name] = {
-        name: t.name,
-        category: t.category,
-        title: t.title,
-        description: t.description,
-        properties: { ...(t.properties ?? {}) },
-        isDefault: false,
-      };
+      project.nodes[t.name] = templateToNode(t);
     }
   });
 
@@ -315,14 +317,7 @@ export function b3ToNodes(data: B3NodeTemplate[]): Record<string, Node> {
   const nodes: Record<string, Node> = {};
   data.forEach((t) => {
     if (t.name) {
-      nodes[t.name] = {
-        name: t.name,
-        category: t.category ?? 'action',
-        title: t.title,
-        description: t.description,
-        properties: { ...(t.properties ?? {}) },
-        isDefault: false,
-      };
+      nodes[t.name] = templateToNode(t);
     }
   });
   return nodes;

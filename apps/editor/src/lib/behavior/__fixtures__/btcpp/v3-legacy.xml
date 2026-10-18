@@ -1,0 +1,20 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <SequenceStar name="Mission">
+      <Parallel success_threshold="2" failure_threshold="1">
+        <Action ID="CheckBattery"/>
+        <Action ID="CheckSensors"/>
+      </Parallel>
+      <RetryUntilSuccesful num_attempts="2">
+        <SubTreePlus ID="Dock" __autoremap="1"/>
+      </RetryUntilSuccesful>
+      <SubTree ID="Report" message="status_text"/>
+    </SequenceStar>
+  </BehaviorTree>
+  <BehaviorTree ID="Dock">
+    <Action ID="ApproachDock"/>
+  </BehaviorTree>
+  <BehaviorTree ID="Report">
+    <Action ID="SendReport" text="{message}"/>
+  </BehaviorTree>
+</root>

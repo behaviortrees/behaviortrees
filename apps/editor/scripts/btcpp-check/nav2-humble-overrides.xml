@@ -1,0 +1,19 @@
+<!--
+  Corrections to Nav2 Humble's nav2_tree_nodes.xml, loaded before it by run.sh.
+  Humble's Spin declares is_recovery in C++ (nav2_behavior_tree/include/
+  nav2_behavior_tree/plugins/action/spin_action.hpp, providedPorts) but the
+  model omits it, so BT.CPP rejects Nav2's own odometry_calibration.xml when
+  nodes are registered from the model. Ports below = the model's + is_recovery.
+-->
+<root>
+  <TreeNodesModel>
+    <Action ID="Spin">
+      <input_port name="spin_dist"/>
+      <input_port name="time_allowance"/>
+      <input_port name="is_recovery"/>
+      <input_port name="server_name"/>
+      <input_port name="server_timeout"/>
+      <input_port name="wait_duration"/>
+    </Action>
+  </TreeNodesModel>
+</root>

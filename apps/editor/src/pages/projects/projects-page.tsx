@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Project } from '../../types';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToProject, parseImportedJson, projectToB3 } from '../../lib/behavior/b3';
+import { btcppToProject, isLikelyXml, parseBtcppXml } from '../../lib/behavior/btcpp';
+import { DEFAULT_NODES } from '../../lib/behavior/defaults';
 import {
   listLocalProjects,
   removeLocalProject,
@@ -109,8 +111,29 @@ const ProjectsPage: React.FC = () => {
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      const text = event.target?.result as string;
+
+      // BehaviorTree.CPP / Nav2 XML opens as a new project named after the file
+      if (isLikelyXml(text)) {
+        try {
+          const imported = parseBtcppXml(text, DEFAULT_NODES);
+          if (imported.kind === 'nodes') {
+            toast.error('Node files can be imported from within the editor');
+            return;
+          }
+          const importedProject = btcppToProject(imported, file.name.replace(/\.xml$/i, ''));
+          loadProject(importedProject);
+          setProjectOrigin(importedProject.id, 'import');
+          navigate('/editor');
+        } catch (error) {
+          console.error('Failed to parse XML project file', error);
+          toast.error(error instanceof Error ? error.message : 'Invalid BehaviorTree.CPP file');
+        }
+        return;
+      }
+
       try {
-        const json = JSON.parse(event.target?.result as string);
+        const json = JSON.parse(text);
         const imported = parseImportedJson(json);
 
         if (imported.kind === 'project') {
@@ -159,7 +182,7 @@ const ProjectsPage: React.FC = () => {
             <input 
               type="file" 
               id="file-input" 
-              accept=".json" 
+              accept=".json,.xml,application/json,application/xml,text/xml" 
               className="hidden" 
               onChange={handleImportProject}
             />

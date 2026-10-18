@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { v4 as uuidv4 } from 'uuid';
-import { Block, Connection, Node, Project, Tree } from '../types';
+import { Block, Connection, Node, NodeCategory, Project, Tree } from '../types';
 import { DEFAULT_NODES } from '../lib/behavior/defaults';
 import { organizeTree, TreeLayout } from '../lib/behavior/organize';
 import { parseImportedJson, projectToB3 } from '../lib/behavior/b3';
@@ -64,6 +64,15 @@ interface ProjectState {
   loadProject: (projectData: Project) => void;
   restoreLastProject: () => boolean;
   addImportedTree: (tree: Tree, nodes: Record<string, Node>) => void;
+  // BehaviorTree.CPP imports: trees replace same-titled ones (a BehaviorTree
+  // ID is the tree's identity) and node models update existing custom nodes
+  addImportedTrees: (
+    trees: Tree[],
+    nodes: Record<string, Node>,
+    models: Record<string, Node>,
+    selectTreeId?: string
+  ) => { replaced: string[]; skipped: string[] };
+  mergeNodeModels: (models: Record<string, Node>) => { skipped: string[] };
   addNodes: (nodes: Record<string, Node>) => void;
   
   // History operations
@@ -75,6 +84,45 @@ interface ProjectState {
 const timestamp = () => new Date().toISOString();
 
 const PASTE_OFFSET = 40;
+
+// Blocks carry their template's category; keep them in step when it changes
+const setBlockCategory = (project: Project, name: string, category: NodeCategory) => {
+  Object.values(project.trees).forEach(tree => {
+    Object.values(tree.blocks).forEach(block => {
+      if (block.name === name) block.category = category;
+    });
+  });
+};
+
+// Node models are authoritative: they add missing nodes and update existing
+// custom ones, which fixes categories guessed on an earlier import. Default
+// nodes are never changed; their names are returned instead.
+const applyNodeModels = (project: Project, models: Record<string, Node>): string[] => {
+  const skipped: string[] = [];
+  Object.values(models).forEach(model => {
+    const existing = project.nodes[model.name];
+    if (!existing) {
+      project.nodes[model.name] = model;
+      return;
+    }
+    if (existing.isDefault) {
+      skipped.push(model.name);
+      return;
+    }
+    project.nodes[model.name] = {
+      ...existing,
+      category: model.category,
+      ports: model.ports,
+      description: model.description || existing.description,
+      // Existing values win; ports the node didn't have yet are added
+      properties: { ...model.properties, ...existing.properties },
+    };
+    if (existing.category !== model.category) {
+      setBlockCategory(project, model.name, model.category);
+    }
+  });
+  return skipped;
+};
 
 // Deep-copy the given blocks (root excluded) and the connections linking them
 const snapshotBlocks = (tree: Tree, blockIds: string[]): Clipboard => {
@@ -339,6 +387,10 @@ export const useProjectStore = create<ProjectState>()(
             });
           } else {
             state.project.nodes[name] = updated;
+          }
+
+          if (updates.category) {
+            setBlockCategory(state.project, updated.name, updates.category);
           }
 
           state.project.updatedAt = timestamp();
@@ -703,6 +755,47 @@ export const useProjectStore = create<ProjectState>()(
           state.project.updatedAt = timestamp();
         }
       });
+    },
+
+    addImportedTrees: (trees, nodes, models, selectTreeId) => {
+      const result = { replaced: [] as string[], skipped: [] as string[] };
+      set(state => {
+        const project = state.project;
+        if (!project) return;
+        state.undoStack.push(JSON.parse(JSON.stringify(project)));
+        state.redoStack = [];
+
+        Object.values(nodes).forEach(node => {
+          if (!project.nodes[node.name]) project.nodes[node.name] = node;
+        });
+        result.skipped = applyNodeModels(project, models);
+
+        trees.forEach(incoming => {
+          const existing = Object.values(project.trees).find(t => t.title === incoming.title);
+          const tree = existing ? { ...incoming, id: existing.id } : incoming;
+          if (existing) result.replaced.push(incoming.title);
+          project.trees[tree.id] = tree;
+          if (incoming.id === selectTreeId) project.selectedTreeId = tree.id;
+        });
+        if (!selectTreeId && trees.length > 0) {
+          project.selectedTreeId = Object.values(project.trees).find(t => t.title === trees[0].title)!.id;
+        }
+
+        project.updatedAt = timestamp();
+      });
+      return result;
+    },
+
+    mergeNodeModels: (models) => {
+      let skipped: string[] = [];
+      set(state => {
+        if (!state.project) return;
+        state.undoStack.push(JSON.parse(JSON.stringify(state.project)));
+        state.redoStack = [];
+        skipped = applyNodeModels(state.project, models);
+        state.project.updatedAt = timestamp();
+      });
+      return { skipped };
     },
 
     addNodes: (nodes) => {

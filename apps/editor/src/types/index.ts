@@ -1,6 +1,16 @@
 // Node category types
 export type NodeCategory = 'composite' | 'decorator' | 'action' | 'condition' | 'root';
 
+// BehaviorTree.CPP port metadata; behavior3 nodes only have properties
+export type PortDirection = 'input' | 'output' | 'inout';
+
+export type NodePort = {
+  direction: PortDirection;
+  type?: string;
+  default?: string;
+  description?: string;
+};
+
 // Base node definition (template)
 export interface Node {
   name: string;
@@ -8,6 +18,8 @@ export interface Node {
   category: NodeCategory;
   description?: string;
   properties: Record<string, unknown>;
+  // Insertion order is port order
+  ports?: Record<string, NodePort>;
   isDefault?: boolean;
 }
 

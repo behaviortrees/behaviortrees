@@ -77,10 +77,10 @@ export type AnalyticsEventMap = {
   tree_created: Record<string, never>;
   project_created: Record<string, never>;
   project_saved: Record<string, unknown>;
-  import: { type: string; source: 'paste' | 'file' | 'example' };
+  import: { type: string; source: 'paste' | 'file' | 'example'; format: 'b3' | 'btcpp' };
   export: {
     type: 'project' | 'tree' | 'nodes';
-    format: 'json' | 'compact';
+    format: 'json' | 'compact' | 'btcpp_v4' | 'btcpp_v3';
     method: 'copy' | 'download';
   };
   custom_node_created: { category: string };
