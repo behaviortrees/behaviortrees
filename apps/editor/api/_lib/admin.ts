@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './http.js';
 import { requireUser } from './auth.js';
 
 // Admin access is an env allowlist of Clerk user ids. Non-admins get a 404

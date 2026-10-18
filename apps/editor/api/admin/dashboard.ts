@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../_lib/http.js';
 import { createClerkClient } from '@clerk/backend';
 import { requireAdmin } from '../_lib/admin.js';
 import {
