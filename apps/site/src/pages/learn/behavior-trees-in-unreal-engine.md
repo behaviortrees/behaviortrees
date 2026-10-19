@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/ArticleLayout.astro
-title: "Behavior Trees in Unreal Engine: How UE's Built-In System Works"
-description: "Unreal Engine ships behavior trees natively. Learn how UE's behavior trees, blackboards, tasks, decorators and services fit together, how UE's model differs from classic BTs, and how to design trees before you build them."
+title: "UE5 Behavior Trees Explained: Tasks, Decorators, Services"
+description: "How Unreal's behavior trees, blackboards, tasks, decorators and services fit together, how UE differs from classic BTs, and a working patrol/chase tree."
 pubDate: "2026-07-20"
 order: 7
 ---
@@ -15,6 +15,10 @@ Unlike Unity, **Unreal Engine ships behavior trees as a first-class engine featu
 same system Epic uses internally, wired into the AI Controller, Blackboard, and Environment
 Query System (EQS). If you're building AI in UE, behavior trees aren't one option among
 many; they're the paved road.
+
+Everything here applies to both UE4 and UE5: the behavior tree system hasn't changed between
+them. UE5 also ships StateTree, a hierarchical state machine used with Mass AI and some
+gameplay logic, but behavior trees are still the usual choice for character AI.
 
 This guide explains the moving parts and — importantly — where Unreal's implementation
 *differs* from the textbook behavior tree model taught in
