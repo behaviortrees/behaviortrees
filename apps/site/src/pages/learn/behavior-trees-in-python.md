@@ -1,8 +1,9 @@
 ---
 layout: ../../layouts/ArticleLayout.astro
-title: "Behavior Trees in Python: py_trees, ROS 2, and Quick Prototypes"
-description: "How to build behavior trees in Python with py_trees — behaviours, composites, blackboards, and ASCII visualization — plus py_trees_ros for ROS 2 robots and when Python is (and isn't) the right runtime."
+title: "Behavior Trees in Python: py_trees Tutorial and ROS 2 Guide"
+description: "Build a behavior tree in Python with py_trees: runnable code, blackboards, live tree output, a 40-line version from scratch, and py_trees_ros for ROS 2."
 pubDate: "2026-07-28"
+updatedDate: "2026-10-19"
 order: 10
 ---
 
@@ -16,35 +17,100 @@ work covered in [Behavior Trees in Robotics](/learn/behavior-trees-in-robotics/)
 
 ## py_trees in five minutes
 
+```bash
+pip install "py_trees>=2.2"
+```
+
 Everything in py_trees is a `Behaviour` with an `update()` method returning a status —
 the same Success/Failure/Running contract from
-[the node reference](/learn/behavior-tree-nodes-explained/):
+[the node reference](/learn/behavior-tree-nodes-explained/). This complete script runs
+as-is on py_trees 2.2 and later (tested on 2.6, the version ROS 2 Humble ships): a guard
+reads the blackboard, a long-running move takes a few ticks, and a patrol fallback runs
+when the guard fails. Older releases, such as the 2.1.x in ROS 2 Foxy, handle `memory`
+differently and won't produce the output below.
 
 ```python
 import py_trees
+from py_trees.common import Access, Status
+
 
 class IsPlayerVisible(py_trees.behaviour.Behaviour):
+    def __init__(self, name):
+        super().__init__(name)
+        self.bb = self.attach_blackboard_client()
+        self.bb.register_key("player_visible", access=Access.READ)
+
     def update(self):
-        return (py_trees.common.Status.SUCCESS
-                if self.blackboard.visible
-                else py_trees.common.Status.FAILURE)
+        return Status.SUCCESS if self.bb.player_visible else Status.FAILURE
+
 
 class MoveToPlayer(py_trees.behaviour.Behaviour):
+    def __init__(self, name, steps=2):
+        super().__init__(name)
+        self.steps = steps
+
+    def initialise(self):
+        self.remaining = self.steps
+
     def update(self):
-        arrived = step_toward(self.blackboard.player_position)
-        return (py_trees.common.Status.SUCCESS if arrived
-                else py_trees.common.Status.RUNNING)
+        self.remaining -= 1
+        return Status.SUCCESS if self.remaining <= 0 else Status.RUNNING
 
-chase = py_trees.composites.Sequence("Chase", memory=False)
-chase.add_children([IsPlayerVisible("Visible?"), MoveToPlayer("Move")])
 
-root = py_trees.composites.Selector("Brain", memory=False)
-root.add_children([chase, build_patrol_subtree()])
+def build_tree():
+    chase = py_trees.composites.Sequence("Chase", memory=False)
+    chase.add_children([IsPlayerVisible("Player visible?"), MoveToPlayer("Move to player")])
 
-tree = py_trees.trees.BehaviourTree(root)
-while True:
-    tree.tick()
+    patrol = py_trees.behaviours.Running("Patrol")
+
+    root = py_trees.composites.Selector("Brain", memory=False)
+    root.add_children([chase, patrol])
+    return py_trees.trees.BehaviourTree(root)
+
+
+if __name__ == "__main__":
+    world = py_trees.blackboard.Client(name="World")
+    world.register_key("player_visible", access=Access.WRITE)
+
+    tree = build_tree()
+    for tick, visible in enumerate([False, True, True], start=1):
+        world.player_visible = visible
+        tree.tick()
+        print(f"--- tick {tick} (player_visible={visible}) ---")
+        print(py_trees.display.ascii_tree(tree.root, show_status=True))
 ```
+
+Run it and the tree prints its own state after every tick:
+
+```text
+--- tick 1 (player_visible=False) ---
+[o] Brain [*]
+    [-] Chase [x]
+        --> Player visible? [x]
+        --> Move to player [-]
+    --> Patrol [*] -- running
+
+--- tick 2 (player_visible=True) ---
+[o] Brain [*]
+    [-] Chase [*]
+        --> Player visible? [o]
+        --> Move to player [*]
+    --> Patrol [-]
+
+--- tick 3 (player_visible=True) ---
+[o] Brain [o]
+    [-] Chase [o]
+        --> Player visible? [o]
+        --> Move to player [o]
+    --> Patrol [-]
+```
+
+`[-]` is a Sequence, `[o]` a Selector, `-->` a leaf; the trailing marks are the status
+(`o` success, `x` failure, `*` running, `-` invalid: not ticked yet, or reset after being
+halted). Tick 2 is the interesting one: the
+player appears, the higher-priority Chase branch takes over, and py_trees **halts the
+running Patrol** (its status resets to `-`). That's the reactive preemption a
+`memory=False` Selector gives you, and seeing it happen is worth more than any diagram.
 
 The pieces map directly onto standard BT vocabulary:
 
@@ -59,18 +125,95 @@ The pieces map directly onto standard BT vocabulary:
 
 Two details are unusually well done. The **blackboard requires behaviours to register
 which keys they read and write** — the "treat keys as an API" discipline from
-[the blackboard guide](/learn/behavior-tree-blackboard/), enforced by the library. And
-**visualization is built in**: `py_trees.display.ascii_tree(root)` prints the tree with
-live per-node status, which makes the tick semantics visible in a way no amount of reading
-achieves.
+[the blackboard guide](/learn/behavior-tree-blackboard/), enforced by the library. Read a
+key you didn't register and py_trees raises instead of silently returning stale data. And
+**visualization is built in**: `ascii_tree` above, `unicode_tree` for nicer terminals, and
+`py_trees.display.render_dot_tree(root)` to export the tree as a diagram for docs or code
+review. That last one needs the Graphviz `dot` program, which pip doesn't install
+(`brew install graphviz` or `apt install graphviz`).
 
-```text
-[o] Brain [*]
-    [-] Chase [*]
-        --> Visible? [o]
-        --> Move [*]      ← Running
-    [-] Patrol
+## A behavior tree in Python from scratch
+
+If you don't need a library, or want to understand what py_trees is doing, the core of a
+behavior tree fits in about 40 lines of plain Python:
+
+```python
+from enum import Enum
+
+
+class Status(Enum):
+    SUCCESS = "success"
+    FAILURE = "failure"
+    RUNNING = "running"
+
+
+class Sequence:
+    def __init__(self, *children):
+        self.children = children
+
+    def tick(self, bb):
+        for child in self.children:
+            status = child.tick(bb)
+            if status is not Status.SUCCESS:
+                return status
+        return Status.SUCCESS
+
+
+class Selector:
+    def __init__(self, *children):
+        self.children = children
+
+    def tick(self, bb):
+        for child in self.children:
+            status = child.tick(bb)
+            if status is not Status.FAILURE:
+                return status
+        return Status.FAILURE
+
+
+class Condition:
+    def __init__(self, check):
+        self.check = check
+
+    def tick(self, bb):
+        return Status.SUCCESS if self.check(bb) else Status.FAILURE
+
+
+class Action:
+    def __init__(self, run):
+        self.run = run
+
+    def tick(self, bb):
+        return self.run(bb)
+
+
+def move_to_player(bb):
+    bb["distance"] -= 1
+    return Status.SUCCESS if bb["distance"] <= 0 else Status.RUNNING
+
+
+def patrol(bb):
+    return Status.RUNNING
+
+
+brain = Selector(
+    Sequence(Condition(lambda bb: bb["player_visible"]), Action(move_to_player)),
+    Action(patrol),
+)
+
+bb = {"player_visible": True, "distance": 2}
+print(brain.tick(bb))  # Status.RUNNING
+print(brain.tick(bb))  # Status.SUCCESS
 ```
+
+A plain dict stands in for the blackboard and plain functions stand in for leaf classes.
+This version leaves out much of what py_trees adds: `initialise()`/`terminate()` hooks
+(here, if the player is lost and spotted again, the move resumes from the old distance
+instead of starting over), halting a running branch when a higher-priority one takes over,
+memory composites, decorators, parallel policies, and visualization.
+[How to Write a Behavior Tree from Scratch](/learn/how-to-implement-a-behavior-tree/) builds
+the same core in TypeScript, adds memory composites, and explains why interruption cleanup
+is the hardest part of a real runtime. Reach for py_trees once you need more than a sketch.
 
 ## py_trees_ros: trees on real robots
 
