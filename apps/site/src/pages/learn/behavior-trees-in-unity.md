@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/ArticleLayout.astro
-title: "Behavior Trees in Unity: Options, Assets, and How to Choose"
-description: "Every way to get behavior trees into Unity in 2026 — Unity Behavior, Behavior Designer, NodeCanvas, open-source libraries, or rolling your own — with honest trade-offs and a design-first workflow."
+title: "Unity Behavior Trees Compared: Free and Paid Options (2026)"
+description: "Unity Behavior, Behavior Designer, NodeCanvas or open source? What each costs, where each falls short, and how to choose before you're locked in."
 pubDate: "2026-07-20"
 order: 6
 ---
