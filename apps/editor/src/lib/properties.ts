@@ -33,3 +33,16 @@ export function formatPropertyValue(value: unknown): string {
 	if (typeof value === 'object') return JSON.stringify(value);
 	return String(value);
 }
+
+/**
+ * Whether edits to a property keep the typed text instead of coercing it.
+ *
+ * BehaviorTree.CPP XML is text: `hz="1.0"` must not come back as `1`. The
+ * classic editor always stored numeric input as numbers, so a value that is
+ * still text yet looks numeric (or boolean) came from XML; so did any node
+ * with BT.CPP port metadata. Everything else keeps the classic coercion.
+ */
+export function keepsText(current: unknown, nodeHasPorts: boolean): boolean {
+	if (nodeHasPorts) return true;
+	return typeof current === 'string' && current !== '' && inferPropertyValue(current) !== current;
+}
