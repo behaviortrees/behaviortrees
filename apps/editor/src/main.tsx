@@ -9,6 +9,21 @@ import { initAnalytics } from './lib/analytics';
 import { CLERK_PUBLISHABLE_KEY, CLOUD_ENABLED } from './lib/auth';
 import { initWhatsNew } from './lib/changelog';
 
+// A tab opened before a deploy asks for page chunks the new deploy no longer
+// has. Reload once to pick up the new build; if that already happened in the
+// last minute, let the error surface rather than loop.
+window.addEventListener('vite:preloadError', (event) => {
+	const key = 'bt-chunk-reload';
+	try {
+		if (Date.now() - Number(sessionStorage.getItem(key) ?? 0) < 60_000) return;
+		sessionStorage.setItem(key, String(Date.now()));
+	} catch {
+		return;
+	}
+	event.preventDefault();
+	window.location.reload();
+});
+
 initAnalytics();
 // Before render, so a project created by this visit doesn't count as returning
 initWhatsNew();

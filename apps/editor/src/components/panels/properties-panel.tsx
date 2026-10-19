@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MousePointerClick, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjectStore } from '../../stores/useProjectStore';
-import { formatPropertyValue, inferPropertyValue } from '../../lib/properties';
+import { formatPropertyValue, inferPropertyValue, keepsText } from '../../lib/properties';
 import { Block } from '../../types';
 
 interface PropertiesPanelProps {
@@ -13,6 +13,8 @@ interface PropertiesPanelProps {
 interface PropertyRowProps {
 	name: string;
 	value: unknown;
+	// The node has BehaviorTree.CPP ports, whose values are text
+	textPorts: boolean;
 	onChange: (value: unknown) => void;
 	onRemove: () => void;
 }
@@ -22,7 +24,7 @@ interface PropertyRowProps {
  * Enter — committing per keystroke pushed a full deep clone of the project onto
  * the undo stack for every character typed.
  */
-const PropertyRow: React.FC<PropertyRowProps> = ({ name, value, onChange, onRemove }) => {
+const PropertyRow: React.FC<PropertyRowProps> = ({ name, value, textPorts, onChange, onRemove }) => {
 	const [draft, setDraft] = useState(() => formatPropertyValue(value));
 
 	// Re-seed when the value changes underneath us (undo, switching nodes)
@@ -31,7 +33,7 @@ const PropertyRow: React.FC<PropertyRowProps> = ({ name, value, onChange, onRemo
 	}, [value]);
 
 	const commit = () => {
-		const next = inferPropertyValue(draft);
+		const next = keepsText(value, textPorts) ? draft : inferPropertyValue(draft);
 		if (next !== value) onChange(next);
 	};
 
@@ -105,6 +107,8 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedBlock, onUpda
 		);
 	}
 
+	const textPorts = !!project.nodes[selectedBlock.name]?.ports;
+
 	const handleTitleChange = (title: string) => {
 		onUpdateBlock?.({ title });
 		setEditingTitle(false);
@@ -129,7 +133,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedBlock, onUpda
 			return;
 		}
 		onUpdateBlock({
-			properties: { ...selectedBlock.properties, [key]: inferPropertyValue(newValue) },
+			properties: { ...selectedBlock.properties, [key]: textPorts ? newValue : inferPropertyValue(newValue) },
 		});
 		setNewKey('');
 		setNewValue('');
@@ -260,6 +264,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedBlock, onUpda
 									key={key}
 									name={key}
 									value={value}
+									textPorts={textPorts}
 									onChange={(next) => handlePropertyChange(key, next)}
 									onRemove={() => handleRemoveProperty(key)}
 								/>

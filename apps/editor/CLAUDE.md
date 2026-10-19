@@ -64,6 +64,7 @@ src/
 - Custom node types for different behavior tree node categories
 - Zustand handles state with immer middleware for immutable updates
 - ShadCN UI components for consistent design
+- Code splitting: every page except home is `React.lazy` in `app-base.tsx`, and the home demo's React Flow canvas (`components/home/tree-preview-canvas.tsx`) is lazy too. Keep `reactflow` and editor imports out of modules that home or the app shell load eagerly. `main.tsx` reloads once on `vite:preloadError` (stale chunks after a deploy).
 
 ### File Formats
 

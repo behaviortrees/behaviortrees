@@ -1,24 +1,23 @@
 import enemyPatrol from '@behaviortrees/examples/trees/enemy-patrol.json';
 import { Pause, Play } from 'lucide-react';
-import React, { createContext, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import ReactFlow, { Edge, Handle, Node as FlowNode, NodeProps, Position, ReactFlowInstance } from 'reactflow';
-import 'reactflow/dist/style.css';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { track } from '../../lib/analytics';
 import { B3Tree, b3ToTree } from '../../lib/behavior/b3';
 import { DEFAULT_NODES } from '../../lib/behavior/defaults';
 import { tickTree, TickEvent, TickStatus } from '../../lib/behavior/simulate';
-import { cn } from '../../lib/utils';
-import { Block } from '../../types';
+import { NodeStatus, STATUS_COLOR, STATUS_LABEL } from './preview-status';
 
 // A read-only, auto-playing run of the enemy patrol example for the home
 // page. Each frame is one tick of the real tree against a scripted world;
 // the traversal replays one node at a time so visitors can watch the
-// selector fall through and the sequences short-circuit.
+// selector fall through and the sequences short-circuit. The canvas (React
+// Flow) loads after the page; the caption and controls render right away.
+
+const TreePreviewCanvas = lazy(() => import('./tree-preview-canvas'));
 
 const EXAMPLE = 'enemy-patrol';
 const STEP_MS = 170;
 const HOLD_MS = 1600;
-const FIT_VIEW = { padding: 0.08 };
 
 // organize spaces leaves for the editor's taller nodes; the preview's
 // nodes are compact, so pull rows closer to keep the zoom readable
@@ -54,80 +53,11 @@ const FRAMES: Frame[] = [
 	},
 ];
 
-// 'active' marks a composite whose children are still being evaluated
-type NodeStatus = TickStatus | 'active';
-
-const StatusContext = createContext<Record<string, NodeStatus>>({});
-
-const STATUS_COLOR: Record<NodeStatus, string> = {
-	active: 'var(--bt-accent)',
-	running: 'var(--warning)',
-	success: 'var(--success)',
-	failure: 'var(--danger)',
-};
-
-const STATUS_LABEL: Record<TickStatus, string> = {
-	running: 'Running',
-	success: 'Success',
-	failure: 'Failure',
-};
-
-const kindOf = (block: Block): string => {
-	if (block.category === 'composite' || block.category === 'decorator') return block.name;
-	return block.category.charAt(0).toUpperCase() + block.category.slice(1);
-};
-
-const PreviewNode: React.FC<NodeProps<Block>> = memo(({ id, data }) => {
-	const status = useContext(StatusContext)[id];
-	const color = status ? STATUS_COLOR[status] : undefined;
-
-	return (
-		<div
-			className={cn(
-				'min-w-[150px] rounded-md border border-l-[3px] bg-raised px-3 py-1.5 transition-[border-color,box-shadow,opacity] duration-200',
-				!status && 'opacity-55'
-			)}
-			style={{
-				// Per side: React warns when borderColor and borderLeftColor mix
-				borderTopColor: color,
-				borderRightColor: color,
-				borderBottomColor: color,
-				borderLeftColor: `var(--color-cat-${data.category})`,
-				boxShadow: color ? `0 0 0 1px ${color}, 0 0 14px color-mix(in srgb, ${color} 35%, transparent)` : undefined,
-			}}
-		>
-			{data.category !== 'root' && (
-				<Handle type="target" position={Position.Left} isConnectable={false} className="!h-1.5 !w-1.5 !min-w-0 !border-0 !bg-edge" />
-			)}
-			<div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">{kindOf(data)}</div>
-			<div className="flex items-center justify-between gap-3 whitespace-nowrap text-[13px] text-fg">
-				{data.title || data.name}
-				<span
-					className="h-2 w-2 shrink-0 rounded-full transition-colors duration-200"
-					style={{ background: color ?? 'transparent' }}
-				/>
-			</div>
-			{(data.category === 'root' || data.category === 'composite' || data.category === 'decorator') && (
-				<Handle type="source" position={Position.Right} isConnectable={false} className="!h-1.5 !w-1.5 !min-w-0 !border-0 !bg-edge" />
-			)}
-		</div>
-	);
-});
-
-const nodeTypes = { preview: PreviewNode };
-
 const buildPreview = () => {
 	const { tree } = b3ToTree(enemyPatrol as B3Tree, DEFAULT_NODES);
 	Object.values(tree.blocks).forEach((block) => {
 		block.position = { x: block.position.x, y: Math.round(block.position.y * ROW_SCALE) };
 	});
-
-	const nodes: FlowNode<Block>[] = Object.values(tree.blocks).map((block) => ({
-		id: block.id,
-		type: 'preview',
-		position: block.position,
-		data: block,
-	}));
 
 	const isLeaf = (id: string) => ['action', 'condition'].includes(tree.blocks[id].category);
 	const memory = new Map<string, number>();
@@ -137,7 +67,7 @@ const buildPreview = () => {
 			.filter((event) => event.type === 'exit' || !isLeaf(event.id))
 	);
 
-	return { tree, nodes, ticks };
+	return { tree, ticks, isLeaf };
 };
 
 const prefersReducedMotion = () => {
@@ -149,13 +79,12 @@ const prefersReducedMotion = () => {
 };
 
 export const TreePreview: React.FC = () => {
-	const { tree, nodes, ticks } = useMemo(buildPreview, []);
-	const [playing, setPlaying] = useState(() => !prefersReducedMotion());
+	const { tree, ticks, isLeaf } = useMemo(buildPreview, []);
+	const [reducedMotion] = useState(prefersReducedMotion);
+	const [playing, setPlaying] = useState(!reducedMotion);
 	const [frame, setFrame] = useState(0);
 	// Reduced motion starts paused on a fully evaluated first tick
-	const [step, setStep] = useState(() => (prefersReducedMotion() ? ticks[0].length : 0));
-	const wrapperRef = useRef<HTMLDivElement>(null);
-	const flowRef = useRef<ReactFlowInstance | null>(null);
+	const [step, setStep] = useState(() => (reducedMotion ? ticks[0].length : 0));
 
 	const events = ticks[frame];
 	const done = step >= events.length;
@@ -176,15 +105,6 @@ export const TreePreview: React.FC = () => {
 		return () => window.clearTimeout(timer);
 	}, [playing, done, frame, step, ticks.length]);
 
-	// fitView only runs on init; keep the tree framed as the column resizes
-	useEffect(() => {
-		const el = wrapperRef.current;
-		if (!el || typeof ResizeObserver === 'undefined') return;
-		const observer = new ResizeObserver(() => flowRef.current?.fitView(FIT_VIEW));
-		observer.observe(el);
-		return () => observer.disconnect();
-	}, []);
-
 	const statuses = useMemo(() => {
 		const map: Record<string, NodeStatus> = {};
 		events.slice(0, step).forEach((event) => {
@@ -193,55 +113,23 @@ export const TreePreview: React.FC = () => {
 		return map;
 	}, [events, step]);
 
-	const edges = useMemo<Edge[]>(
-		() =>
-			Object.values(tree.connections).map((connection) => {
-				const status = statuses[connection.target];
-				return {
-					id: connection.id,
-					source: connection.source,
-					target: connection.target,
-					animated: status === 'running' || status === 'active',
-					style: {
-						stroke: status ? STATUS_COLOR[status] : 'var(--edge)',
-						strokeWidth: status ? 2 : 1.25,
-						opacity: status ? 1 : 0.5,
-					},
-				};
-			}),
-		[tree, statuses]
-	);
+	// The most recent leaf result, for the canvas to follow on small screens;
+	// once the tick is done, the whole tree is shown with its result
+	const focusId = done
+		? undefined
+		: events
+				.slice(0, step)
+				.reverse()
+				.find((event) => isLeaf(event.id))?.id;
 
 	const result = done ? statuses[tree.rootId!] : undefined;
 
 	return (
 		<figure className="card mb-12 !p-0 overflow-hidden">
-			<div ref={wrapperRef} className="h-[260px] sm:h-[400px] border-b border-border" aria-hidden="true">
-				<StatusContext.Provider value={statuses}>
-					<ReactFlow
-						nodes={nodes}
-						edges={edges}
-						nodeTypes={nodeTypes}
-						onInit={(instance) => {
-							flowRef.current = instance;
-						}}
-						fitView
-						fitViewOptions={FIT_VIEW}
-						minZoom={0.2}
-						nodesDraggable={false}
-						nodesConnectable={false}
-						nodesFocusable={false}
-						edgesFocusable={false}
-						elementsSelectable={false}
-						panOnDrag={false}
-						panOnScroll={false}
-						zoomOnScroll={false}
-						zoomOnPinch={false}
-						zoomOnDoubleClick={false}
-						preventScrolling={false}
-						proOptions={{ hideAttribution: true }}
-					/>
-				</StatusContext.Provider>
+			<div className="h-[260px] sm:h-[400px] border-b border-border" aria-hidden="true">
+				<Suspense fallback={null}>
+					<TreePreviewCanvas tree={tree} statuses={statuses} focusId={focusId} animate={!reducedMotion} />
+				</Suspense>
 			</div>
 
 			<figcaption className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
