@@ -4,6 +4,7 @@ title: "Behavior Trees in Python: py_trees Tutorial and ROS 2 Guide"
 description: "Build a behavior tree in Python with py_trees: runnable code, blackboards, live tree output, a 40-line version from scratch, and py_trees_ros for ROS 2."
 pubDate: "2026-07-28"
 updatedDate: "2026-10-19"
+books: [colledanchise, martinRico, millington]
 order: 10
 ---
 

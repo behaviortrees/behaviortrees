@@ -3,6 +3,7 @@ layout: ../../layouts/ArticleLayout.astro
 title: "Structuring Large Behavior Trees: Subtrees, Reuse, and Scale"
 description: "How to keep behavior trees readable past 30 nodes — priority layering, extracting subtrees, parameterized leaves, naming conventions, and knowing when logic shouldn't live in the tree at all."
 pubDate: "2026-07-28"
+books: [gameAiPro, millington, colledanchise]
 order: 14
 ---
 

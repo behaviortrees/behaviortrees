@@ -20,9 +20,25 @@ const draftUrls = new Set(
         .map((file) => `${SITE}/learn/${file.replace(/\.md$/, '')}/`)
 );
 
+// Amazon links in article prose get the same rel the layout's reading list
+// uses, so search engines see them as affiliate links.
+function rehypeAffiliateLinks() {
+    const visit = (node) => {
+        if (node.tagName === 'a' && String(node.properties?.href ?? '').startsWith('https://www.amazon.com/')) {
+            node.properties.rel = ['sponsored', 'noopener'];
+            node.properties.target = '_blank';
+        }
+        node.children?.forEach(visit);
+    };
+    return (tree) => visit(tree);
+}
+
 export default defineConfig({
     site: SITE,
     trailingSlash: 'always',
+    markdown: {
+        rehypePlugins: [rehypeAffiliateLinks],
+    },
     integrations: [
         sitemap({
             filter: (page) => !draftUrls.has(page),

@@ -3,10 +3,14 @@ layout: ../../layouts/ArticleLayout.astro
 title: "Behavior Trees vs Finite State Machines: Which Should You Use?"
 description: "An honest comparison of behavior trees and finite state machines for game AI — scalability, reactivity, debugging, performance — with concrete guidance on when each one wins."
 pubDate: "2026-07-20"
+books: [nystrom, millington, buckland]
 order: 4
 ---
 
 # Behavior Trees vs Finite State Machines
+
+<div class="disclosure">Disclosure: some links on this page are affiliate links. If you buy
+through them we may earn a commission at no extra cost to you.</div>
 
 Ask "should my AI be a behavior tree or a state machine?" in any gamedev community and
 you'll get confident answers in both directions. Both architectures are mainstream, both
@@ -90,3 +94,14 @@ JSON for [Unity](/learn/behavior-trees-in-unity/),
 [a robotics stack](/learn/behavior-trees-in-robotics/).
 
 <a class="try-editor" href="/?example=enemy-patrol">▶ Open the enemy AI example in the editor</a>
+
+## Going deeper
+
+- The "State" chapter of Robert Nystrom's *Game Programming Patterns* is the clearest
+  walkthrough of state machines in game code, including hierarchical and pushdown
+  variants and where they stop scaling. It's
+  [free to read online](https://gameprogrammingpatterns.com/state.html), or
+  [in print on Amazon](https://www.amazon.com/dp/0990582906?tag=behaviortrees-20).
+- Ian Millington's *AI for Games*
+  ([Amazon](https://www.amazon.com/dp/1138483974?tag=behaviortrees-20)) covers both
+  architectures side by side, along with the rest of game decision-making.

@@ -11,26 +11,66 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 
 // Amazon Associates ID for the behaviortrees.com account.
 const amazonTag = 'behaviortrees-20';
-const books = [
-    {
+// An article can pick its own shelf with `books: [ids]` in frontmatter.
+const bookCatalog = {
+    colledanchise: {
         title: 'Behavior Trees in Robotics and AI: An Introduction',
         authors: 'Michele Colledanchise & Petter Ögren',
         blurb: 'The definitive behavior tree reference, from theory through robotics practice.',
         asin: '1138593737',
     },
-    {
+    millington: {
         title: 'AI for Games, Third Edition',
         authors: 'Ian Millington',
         blurb: 'The standard game-AI textbook, including decision-making and behavior trees.',
         asin: '1138483974',
     },
-    {
+    buckland: {
         title: 'Programming Game AI by Example',
         authors: 'Mat Buckland',
         blurb: 'A classic hands-on introduction to agent architectures for games.',
         asin: '1556220782',
     },
-];
+    gameAiPro: {
+        title: 'Game AI Pro: Collected Wisdom of Game AI Professionals',
+        authors: 'Steve Rabin (ed.)',
+        blurb: 'Chapters by shipping game AI programmers, including the Behavior Tree Starter Kit.',
+        asin: '1466565969',
+    },
+    nystrom: {
+        title: 'Game Programming Patterns',
+        authors: 'Robert Nystrom',
+        blurb: 'The clearest explanation of state machines, and their limits, in game code.',
+        asin: '0990582906',
+    },
+    mark: {
+        title: 'Behavioral Mathematics for Game AI',
+        authors: 'Dave Mark',
+        blurb: 'The standard text on utility-based decision making.',
+        asin: '1584506849',
+    },
+    secchi: {
+        title: 'Artificial Intelligence in Unreal Engine 5',
+        authors: 'Marco Secchi',
+        blurb: 'UE5 behavior trees, blackboards, services and decorators in Blueprints and C++.',
+        asin: '1836205856',
+    },
+    aversa: {
+        title: 'Unity Artificial Intelligence Programming, Fifth Edition',
+        authors: 'Dr. Davide Aversa',
+        blurb: 'Game AI in Unity, from state machines and pathfinding to behavior trees.',
+        asin: '1803238534',
+    },
+    martinRico: {
+        title: 'A Concise Introduction to Robot Programming with ROS 2',
+        authors: 'Francisco Martín Rico',
+        blurb: 'ROS 2 from the ground up, including programming robot behaviors with behavior trees.',
+        asin: '1032851481',
+    },
+};
+const books = (frontmatter?.books ?? ['colledanchise', 'millington', 'buckland'])
+    .map((id) => bookCatalog[id])
+    .filter(Boolean);
 
 const jsonLd = isArticle
     ? {
@@ -196,7 +236,7 @@ const jsonLd = isArticle
             !isGuideIndex && (
                 <section class="reading">
                     <h2>Recommended reading</h2>
-                    <p>Books that go deeper on behavior trees and game AI.</p>
+                    <p>Books that go deeper on the topics in this guide.</p>
                     <ul>
                         {books.map((book) => (
                             <li>

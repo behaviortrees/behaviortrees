@@ -3,6 +3,7 @@ layout: ../../layouts/ArticleLayout.astro
 title: "Unity Behavior Trees Compared: Free and Paid Options (2026)"
 description: "Unity Behavior, Behavior Designer, NodeCanvas or open source? What each costs, where each falls short, and how to choose before you're locked in."
 pubDate: "2026-07-20"
+books: [aversa, millington, buckland]
 order: 6
 ---
 
@@ -89,8 +90,11 @@ Whichever runtime you pick, keep tree *design* separate from tree *implementatio
 The book most Unity AI programmers actually learn from is **Ian Millington's *AI for
 Games*** — it covers behavior trees alongside steering, pathfinding, and decision-making
 in engine-agnostic terms
-([find it on Amazon](https://www.amazon.com/s?k=AI+for+Games+Ian+Millington&tag=behaviortrees-20)).
-For free reading, the **Game AI Pro** series chapters on behavior trees are
+([find it on Amazon](https://www.amazon.com/dp/1138483974?tag=behaviortrees-20)).
+For a Unity-specific walkthrough, Dr. Davide Aversa's *Unity Artificial Intelligence
+Programming* covers state machines, pathfinding, and behavior trees
+([Amazon](https://www.amazon.com/dp/1803238534?tag=behaviortrees-20)); the fifth edition
+is from 2022, so it predates the official Unity Behavior package. For free reading, the **Game AI Pro** series chapters on behavior trees are
 [available online](https://www.gameaipro.com/) and remain excellent.
 
 ## Related guides

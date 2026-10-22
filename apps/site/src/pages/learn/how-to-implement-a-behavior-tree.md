@@ -3,10 +3,14 @@ layout: ../../layouts/ArticleLayout.astro
 title: "How to Write a Behavior Tree from Scratch (~100 Lines)"
 description: "Implement a working behavior tree runtime yourself: the status enum, sequence, selector, memory variants, and decorators in about 100 lines of TypeScript that port directly to C#, GDScript, or C++."
 pubDate: "2026-07-28"
+books: [gameAiPro, millington, buckland]
 order: 13
 ---
 
 # How to Write a Behavior Tree from Scratch
+
+<div class="disclosure">Disclosure: some links on this page are affiliate links. If you buy
+through them we may earn a commission at no extra cost to you.</div>
 
 The core of a behavior tree runtime is famously small — small enough that writing one is
 the single best way to *actually* understand tick semantics. This guide builds a complete,
@@ -155,6 +159,18 @@ Three things separate this from a production runtime:
 Design the tree visually, export JSON, and let your hundred lines execute it:
 
 <a class="try-editor" href="/?example=enemy-patrol">▶ Open the tree this article implements</a>
+
+## Going further
+
+"The Behavior Tree Starter Kit" by Alex Champandard and Philip Dunstan does this same
+exercise in C++, then goes past it. Their "second generation" design splits shared node
+data from per-agent runtime state (the fix for the shared-tree bug above), packs a tree's
+nodes into one block of memory, and switches to event-driven traversal. The
+chapter is a [free PDF](https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter06_The_Behavior_Tree_Starter_Kit.pdf),
+the code is [on GitHub](https://github.com/aigamedev/btsk), and it comes from the first
+*Game AI Pro* book
+([Amazon](https://www.amazon.com/dp/1466565969?tag=behaviortrees-20)), whose other
+chapters are written by working game AI programmers.
 
 ## Related guides
 

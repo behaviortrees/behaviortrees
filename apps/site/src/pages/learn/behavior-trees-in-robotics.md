@@ -3,6 +3,7 @@ layout: ../../layouts/ArticleLayout.astro
 title: "Behavior Trees in Robotics: BehaviorTree.CPP, ROS 2, and Nav2"
 description: "Why robotics adopted behavior trees from games — and how BehaviorTree.CPP, ROS 2, and the Nav2 navigation stack use them today, with the key differences from game-style trees."
 pubDate: "2026-07-20"
+books: [colledanchise, martinRico, millington]
 order: 9
 ---
 
@@ -100,9 +101,12 @@ BT.CPP subtrees the same way — subtree reuse maps naturally onto "skills" a ro
 1. **The book:** *Behavior Trees in Robotics and AI: An Introduction* by Michele
    Colledanchise and Petter Ögren is the definitive text — rigorous but readable, and the
    authors maintain a [free preprint on arXiv](https://arxiv.org/abs/1709.00084)
-   ([print edition on Amazon](https://www.amazon.com/s?k=Behavior+Trees+in+Robotics+and+AI&tag=behaviortrees-20)).
+   ([print edition on Amazon](https://www.amazon.com/dp/1138593737?tag=behaviortrees-20)).
 2. **Hands-on:** work through the [BehaviorTree.CPP tutorials](https://www.behaviortree.dev/docs/intro),
-   then read Nav2's default behavior tree XMLs — they're short and production-grade.
+   then read Nav2's default behavior tree XMLs — they're short and production-grade. If
+   you're new to ROS 2 itself, Francisco Martín Rico's *A Concise Introduction to Robot
+   Programming with ROS 2* builds up to a chapter on programming robot behaviors with
+   behavior trees ([Amazon](https://www.amazon.com/dp/1032851481?tag=behaviortrees-20)).
 3. **Design practice:** sketch your mission logic in the free
    [online behavior tree editor](/) before committing it to XML — structure mistakes are
    much cheaper to fix in a sketch.
