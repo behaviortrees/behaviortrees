@@ -3,6 +3,7 @@ layout: ../../layouts/ArticleLayout.astro
 title: "UE5 Behavior Trees Explained: Tasks, Decorators, Services"
 description: "How Unreal's behavior trees, blackboards, tasks, decorators and services fit together, how UE differs from classic BTs, and a working patrol/chase tree."
 pubDate: "2026-07-20"
+books: [secchi, millington, gameAiPro]
 order: 7
 ---
 
@@ -98,9 +99,13 @@ into UE assets (conditions become decorators, remember).
 
 - Epic's official [Behavior Tree documentation and quick-start](https://dev.epicgames.com/documentation/en-us/unreal-engine/behavior-trees-in-unreal-engine)
   are genuinely good — do the quick-start once before building your own.
+- For a book-length UE5 walkthrough, Marco Secchi's *Artificial Intelligence in Unreal
+  Engine 5* (2024) spends three chapters on behavior trees, blackboards, custom tasks,
+  services, decorators, and runtime debugging, in both Blueprints and C++
+  ([Amazon](https://www.amazon.com/dp/1836205856?tag=behaviortrees-20)).
 - For the theory underneath (why trees, utility hybrids, formal semantics), **Ian
   Millington's *AI for Games***
-  ([Amazon](https://www.amazon.com/s?k=AI+for+Games+Ian+Millington&tag=behaviortrees-20))
+  ([Amazon](https://www.amazon.com/dp/1138483974?tag=behaviortrees-20))
   and the free [Game AI Pro chapters](https://www.gameaipro.com/) are the standard references.
 
 ## Related guides

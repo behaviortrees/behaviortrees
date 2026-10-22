@@ -4,6 +4,7 @@ title: "Behavior Trees vs GOAP vs Utility AI: Picking an Architecture"
 description: "The three mainstream game AI architectures compared honestly — authored behavior trees, GOAP planners, and utility scoring — with the trade-offs, famous examples, and the hybrids real games actually ship."
 pubDate: "2026-07-28"
 draft: true
+books: [millington, mark, gameAiPro]
 order: 5
 ---
 
@@ -95,9 +96,9 @@ These compose more often than they compete:
   real time for planner debugging.
 
 For the theory behind all three, **Ian Millington's *AI for Games***
-([Amazon](https://www.amazon.com/s?k=AI+for+Games+Ian+Millington&tag=behaviortrees-20)) covers
+([Amazon](https://www.amazon.com/dp/1138483974?tag=behaviortrees-20)) covers
 the field, and **Dave Mark's *Behavioral Mathematics for Game AI***
-([Amazon](https://www.amazon.com/s?k=Behavioral+Mathematics+for+Game+AI&tag=behaviortrees-20))
+([Amazon](https://www.amazon.com/dp/1584506849?tag=behaviortrees-20))
 is the standard utility text. The free [Game AI Pro chapters](https://www.gameaipro.com/)
 include first-hand writeups of every architecture above.
 
