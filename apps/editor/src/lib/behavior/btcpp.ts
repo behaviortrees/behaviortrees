@@ -11,6 +11,7 @@ import {
   V4_TO_V3_NAMES,
 } from './btcpp-catalog';
 import { DEFAULT_NODES } from './defaults';
+import { InvalidFileError } from './import-error';
 import { childIdsInOrder, organizeTree, readTreeLayout, TreeLayout } from './organize';
 
 // BehaviorTree.CPP XML (v3 and v4), the format of Groot2 and ROS 2 Nav2.
@@ -101,16 +102,16 @@ function guessCategory(name: string, maxChildren: number): NodeCategory {
 function parseDocument(text: string): Element {
   // Refuse DTDs outright rather than trusting the parser with entities
   if (/<!DOCTYPE/i.test(text)) {
-    throw new Error('XML files with a DOCTYPE are not supported');
+    throw new InvalidFileError('XML files with a DOCTYPE are not supported', 'xml_doctype');
   }
   const doc = new DOMParser().parseFromString(text.replace(/^\uFEFF/, ''), 'application/xml');
   const error = doc.getElementsByTagName('parsererror')[0];
   if (error) {
     const detail = (error.textContent ?? '').trim().split('\n')[0];
-    throw new Error(`Not valid XML${detail ? `: ${detail}` : ''}`);
+    throw new InvalidFileError(`Not valid XML${detail ? `: ${detail}` : ''}`, 'invalid_xml');
   }
   if (doc.documentElement.tagName !== 'root') {
-    throw new Error('Not a BehaviorTree.CPP file: expected a <root> element');
+    throw new InvalidFileError('Not a BehaviorTree.CPP file: expected a <root> element', 'not_behavior_tree');
   }
   return doc.documentElement;
 }
@@ -185,7 +186,7 @@ export function parseBtcppXml(
 
   if (treeElements.length === 0) {
     if (Object.keys(models).length === 0) {
-      throw new Error('This file has no <BehaviorTree> or <TreeNodesModel>');
+      throw new InvalidFileError('This file has no <BehaviorTree> or <TreeNodesModel>', 'not_behavior_tree');
     }
     return { kind: 'nodes', version, models, issues };
   }

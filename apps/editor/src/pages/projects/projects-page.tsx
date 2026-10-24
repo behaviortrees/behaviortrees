@@ -12,6 +12,7 @@ import {
 } from '../../lib/storage/local-projects';
 import { useSyncStore } from '../../lib/storage/cloud-sync';
 import { track } from '../../lib/analytics';
+import { trackImportError } from '../../lib/import-tracking';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { Button } from '../../components/ui/button';
 import { ArrowRight, Plus, Download, Trash, FolderOpen, Pencil, X } from 'lucide-react';
@@ -119,21 +120,32 @@ const ProjectsPage: React.FC = () => {
           const imported = parseBtcppXml(text, DEFAULT_NODES);
           if (imported.kind === 'nodes') {
             toast.error('Node files can be imported from within the editor');
+            track('import_failed', { source: 'file', format: 'btcpp', reason: 'nodes_file_needs_editor' });
             return;
           }
           const importedProject = btcppToProject(imported, file.name.replace(/\.xml$/i, ''));
           loadProject(importedProject);
           setProjectOrigin(importedProject.id, 'import');
+          track('import', { type: imported.kind, source: 'file', format: 'btcpp' });
           navigate('/editor');
         } catch (error) {
           console.error('Failed to parse XML project file', error);
+          trackImportError(error, { source: 'file', format: 'btcpp' });
           toast.error(error instanceof Error ? error.message : 'Invalid BehaviorTree.CPP file');
         }
         return;
       }
 
+      let json: unknown;
       try {
-        const json = JSON.parse(text);
+        json = JSON.parse(text);
+      } catch {
+        toast.error('Invalid behavior tree file');
+        track('import_failed', { source: 'file', format: 'b3', reason: 'invalid_json' });
+        return;
+      }
+
+      try {
         const imported = parseImportedJson(json);
 
         if (imported.kind === 'project') {
@@ -149,11 +161,14 @@ const ProjectsPage: React.FC = () => {
           setProjectOrigin(importedProject.id, 'import');
         } else {
           toast.error('Node files can be imported from within the editor');
+          track('import_failed', { source: 'file', format: 'b3', reason: 'nodes_file_needs_editor' });
           return;
         }
+        track('import', { type: imported.kind, source: 'file', format: 'b3' });
         navigate('/editor');
       } catch (error) {
         console.error('Failed to parse project file', error);
+        trackImportError(error, { source: 'file', format: 'b3' });
         toast.error('Invalid behavior tree file');
       }
     };

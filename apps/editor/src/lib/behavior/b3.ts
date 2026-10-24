@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Block, Connection, Node, NodeCategory, NodePort, Project, Tree } from '../../types';
 import { DEFAULT_NODES } from './defaults';
+import { InvalidFileError } from './import-error';
 import { childIdsInOrder, organizeTree, readTreeLayout, TreeLayout } from './organize';
 import { deserializeProject } from './serializer';
 
@@ -381,7 +382,7 @@ export function parseImportedJson(data: unknown): ImportedData {
     return { kind: 'nodes', nodes: b3ToNodes(data as B3NodeTemplate[]) };
   }
   if (!data || typeof data !== 'object') {
-    throw new Error('Not a behavior tree file');
+    throw new InvalidFileError('Not a behavior tree file', 'not_behavior_tree');
   }
   const d = data as Record<string, unknown>;
   if (isLegacyReactProject(d)) {
@@ -396,5 +397,5 @@ export function parseImportedJson(data: unknown): ImportedData {
   if (d.scope === 'node' && d.name) {
     return { kind: 'nodes', nodes: b3ToNodes([d as B3NodeTemplate]) };
   }
-  throw new Error('Unrecognized behavior tree file format');
+  throw new InvalidFileError('Unrecognized behavior tree file format', 'not_behavior_tree');
 }
