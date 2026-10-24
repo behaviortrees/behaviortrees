@@ -113,7 +113,13 @@ export function initAnalytics(): void {
       persistence: 'localStorage',
       autocapture: false,
       capture_pageview: 'history_change',
-      capture_pageleave: false,
+      // $pageleave gives web analytics session duration and bounce rate
+      capture_pageleave: true,
+      // Error tracking: window errors and unhandled rejections. React 19
+      // reports uncaught render errors through window.reportError, so those
+      // land here too. Stack traces resolve via the source maps vite.config.ts
+      // uploads on production builds.
+      capture_exceptions: true,
       disable_surveys: false,
       session_recording: {
         maskAllInputs: true,

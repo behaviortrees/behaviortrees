@@ -15,3 +15,8 @@ overrides:
   smol-toml: ^1.7.1
   # tsx 4.21 (an optional vite peer) pins esbuild ~0.27.
   esbuild@0.27: ^0.28.1
+
+# posthog-cli's postinstall downloads its native binary, which uploads the
+# editor's source maps to PostHog during the Vercel build.
+onlyBuiltDependencies:
+  - '@posthog/cli'

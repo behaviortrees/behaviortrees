@@ -1,9 +1,11 @@
 import { copyFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import posthog from '@posthog/rollup-plugin';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -45,8 +47,46 @@ const examplesPlugin = (): Plugin => ({
 	},
 });
 
+// Upload source maps to PostHog error tracking so production stack traces are
+// readable. Only when the build has a key (the Vercel production env); other
+// builds skip it. The plugin emits hidden maps and deletes them after upload,
+// so they're never served.
+const SOURCEMAP_KEY = process.env.POSTHOG_SOURCEMAP_API_KEY;
+const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID;
+
+const posthogSourcemaps = (): Plugin => {
+	const plugin = posthog({
+		personalApiKey: SOURCEMAP_KEY ?? '',
+		projectId: POSTHOG_PROJECT_ID,
+		sourcemaps: {
+			enabled: Boolean(SOURCEMAP_KEY && POSTHOG_PROJECT_ID),
+			releaseName: 'behaviortrees-editor',
+			releaseVersion: process.env.VERCEL_GIT_COMMIT_SHA,
+			// Bind the release at upload time. The default 'event' mode calls the
+			// PostHog API while rendering chunks, where a failure can't be caught.
+			releaseMode: 'symbol-set',
+		},
+	}) as Plugin;
+	// A failed upload (bad key, PostHog down) must not fail the deploy. Warn,
+	// and remove the maps the plugin would have deleted after uploading.
+	const writeBundle = plugin.writeBundle;
+	if (writeBundle && typeof writeBundle === 'object') {
+		const upload = writeBundle.handler;
+		writeBundle.handler = async function (options, bundle) {
+			try {
+				await upload.call(this, options, bundle);
+			} catch (error) {
+				console.warn(`PostHog source map upload failed, deploying without it: ${error}`);
+				const maps = Object.keys(bundle).filter((file) => file.endsWith('.map'));
+				await Promise.all(maps.map((file) => rm(join(options.dir ?? '', file), { force: true })));
+			}
+		};
+	}
+	return plugin;
+};
+
 export default defineConfig({
-	plugins: [react(), tailwindcss(), examplesPlugin()],
+	plugins: [react(), tailwindcss(), examplesPlugin(), posthogSourcemaps()],
 	server: {
 		// The sync API runs as Vercel functions; in dev, run `vercel dev --listen
 		// 3000` alongside vite so /api hits real functions while keeping HMR.

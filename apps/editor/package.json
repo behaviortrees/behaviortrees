@@ -45,6 +45,8 @@
   "devDependencies": {
     "@behaviortrees/examples": "workspace:*",
     "@eslint/js": "^9.39.5",
+    "@posthog/cli": "^0.18.12",
+    "@posthog/rollup-plugin": "^1.6.2",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.5",
