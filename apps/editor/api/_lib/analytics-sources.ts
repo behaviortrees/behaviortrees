@@ -24,12 +24,31 @@ export type PostHogStats = {
   };
 };
 
+// BT.CPP shipped as a demand bet: how often its import/export get used
+// against behavior3 JSON, who tries it, and why imports fail.
+export type BtcppStats = {
+  weekly: { week: string; event: string; format: string; count: number }[];
+  failures: { format: string; reason: string; count: number }[];
+  users30d: { btcpp: number; anyFormat: number };
+};
+
+// Exceptions from posthog-js error tracking, grouped by type and message
+export type ErrorStats = {
+  total30d: number;
+  users30d: number;
+  daily: { date: string; count: number }[];
+  // lastSeen is epoch milliseconds
+  top: { type: string; message: string; count: number; users: number; lastSeen: number }[];
+  url: string;
+};
+
 const TRACKED_EVENTS = [
   'example_loaded',
   'tree_created',
   'project_created',
   'project_saved',
   'import',
+  'import_failed',
   'export',
   'custom_node_created',
   'app_session_started',
@@ -253,5 +272,103 @@ export async function fetchPostHogStats(): Promise<PostHogStats> {
       users: Number(row[1]),
     })),
     retention,
+  };
+}
+
+export async function fetchBtcppStats(): Promise<BtcppStats> {
+  const [weekly, failures, users] = await Promise.all([
+    posthogQuery(
+      `select toString(toStartOfWeek(timestamp, 1)) as week,
+              event,
+              coalesce(toString(properties.format), 'unknown') as format,
+              count() as c
+       from events
+       where timestamp >= toStartOfWeek(now() - interval 7 week, 1)
+         and event in ('import', 'export')
+       group by week, event, format
+       order by week asc`
+    ),
+    posthogQuery(
+      `select coalesce(toString(properties.format), 'unknown') as format,
+              coalesce(toString(properties.reason), 'unknown') as reason,
+              count() as c
+       from events
+       where event = 'import_failed' and timestamp >= now() - interval 30 day
+       group by format, reason
+       order by c desc`
+    ),
+    posthogQuery(
+      `select count(distinct if(toString(properties.format) like 'btcpp%', person_id, null)) as btcpp,
+              count(distinct person_id) as any_format
+       from events
+       where event in ('import', 'export', 'import_failed')
+         and timestamp >= now() - interval 30 day`
+    ),
+  ]);
+
+  return {
+    weekly: weekly.map((row) => ({
+      week: String(row[0]),
+      event: String(row[1]),
+      format: String(row[2]),
+      count: Number(row[3]),
+    })),
+    failures: failures.map((row) => ({
+      format: String(row[0]),
+      reason: String(row[1]),
+      count: Number(row[2]),
+    })),
+    users30d: {
+      btcpp: Number(users[0]?.[0] ?? 0),
+      anyFormat: Number(users[0]?.[1] ?? 0),
+    },
+  };
+}
+
+export async function fetchErrorStats(): Promise<ErrorStats> {
+  // $exception_list is a JSON array, outermost exception first
+  const [totals, daily, top] = await Promise.all([
+    posthogQuery(
+      `select count() as c, count(distinct person_id) as users
+       from events
+       where event = '$exception' and timestamp >= now() - interval 30 day`
+    ),
+    posthogQuery(
+      `select toString(toDate(timestamp)) as day, count() as c
+       from events
+       where event = '$exception' and timestamp >= now() - interval 30 day
+       group by day
+       order by day asc`
+    ),
+    posthogQuery(
+      `select JSONExtractString(properties.$exception_list, 1, 'type') as type,
+              JSONExtractString(properties.$exception_list, 1, 'value') as message,
+              count() as c,
+              count(distinct person_id) as users,
+              toUnixTimestamp(max(timestamp)) as last_seen
+       from events
+       where event = '$exception' and timestamp >= now() - interval 30 day
+       group by type, message
+       order by c desc
+       limit 5`
+    ),
+  ]);
+
+  return {
+    total30d: Number(totals[0]?.[0] ?? 0),
+    users30d: Number(totals[0]?.[1] ?? 0),
+    daily: daily.map((row) => ({
+      date: String(row[0]),
+      count: Number(row[1]),
+    })),
+    top: top.map((row) => ({
+      type: String(row[0]) || 'Error',
+      message: String(row[1]),
+      count: Number(row[2]),
+      users: Number(row[3]),
+      lastSeen: Number(row[4]) * 1000,
+    })),
+    // posthogQuery already threw if the project id were missing
+    url: `https://us.posthog.com/project/${process.env.POSTHOG_PROJECT_ID}/error_tracking`,
   };
 }

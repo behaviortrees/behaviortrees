@@ -8,8 +8,12 @@ import {
   type CommercialInterestStats,
 } from '../_lib/db.js';
 import {
+  fetchBtcppStats,
+  fetchErrorStats,
   fetchPostHogStats,
   fetchTrafficStats,
+  type BtcppStats,
+  type ErrorStats,
   type PostHogStats,
   type TrafficStats,
 } from '../_lib/analytics-sources.js';
@@ -35,6 +39,8 @@ export type AdminDashboardResponse = {
   cached: boolean;
   traffic: TrafficStats | SectionError;
   posthog: PostHogStats | SectionError;
+  btcpp: BtcppStats | SectionError;
+  errors: ErrorStats | SectionError;
   projects: ProjectsSection | SectionError;
   interests: CommercialInterestStats | SectionError;
 };
@@ -109,9 +115,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const [traffic, posthog, projects, interests] = await Promise.allSettled([
+  const [traffic, posthog, btcpp, errors, projects, interests] = await Promise.allSettled([
     fetchTrafficStats(),
     fetchPostHogStats(),
+    fetchBtcppStats(),
+    fetchErrorStats(),
     fetchProjectsSection(),
     getCommercialInterestStats(),
   ]);
@@ -121,6 +129,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     cached: false,
     traffic: settled(traffic, 'traffic'),
     posthog: settled(posthog, 'posthog'),
+    btcpp: settled(btcpp, 'btcpp'),
+    errors: settled(errors, 'errors'),
     projects: settled(projects, 'projects'),
     interests: settled(interests, 'interests'),
   };
