@@ -5,7 +5,7 @@ import './index.css';
 
 import App from './app-base.tsx';
 import CloudSyncController from './components/auth/cloud-sync-controller.tsx';
-import { initAnalytics } from './lib/analytics';
+import { initAnalytics, markReloadingForNewDeploy } from './lib/analytics';
 import { CLERK_PUBLISHABLE_KEY, CLOUD_ENABLED } from './lib/auth';
 import { initWhatsNew } from './lib/changelog';
 
@@ -21,6 +21,7 @@ window.addEventListener('vite:preloadError', (event) => {
 		return;
 	}
 	event.preventDefault();
+	markReloadingForNewDeploy();
 	window.location.reload();
 });
 
