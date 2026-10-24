@@ -1,4 +1,4 @@
-import posthog from 'posthog-js';
+import posthog, { type CaptureResult } from 'posthog-js';
 
 // Public project API key — safe to commit (PostHog keys are write-only).
 const POSTHOG_KEY = 'phc_zJzYsJvv7qpNZgQxCqVP2ksqB2YNd7eBvFD9YtjvDZ2Q';
@@ -112,6 +112,22 @@ function debugEnabled(): boolean {
 }
 
 let enabled = false;
+// Set once main.tsx starts reloading for a new deploy (see vite:preloadError)
+let reloadingForNewDeploy = false;
+
+// Exceptions that are never bugs, kept out of error tracking
+function dropNoiseExceptions(event: CaptureResult | null): CaptureResult | null {
+  if (event?.event !== '$exception') return event;
+  // Cancelling vite:preloadError makes the stale chunk's import() resolve to
+  // undefined, so React.lazy throws "reading 'default'" just before the reload
+  // lands. Nothing thrown while the page is being replaced is real.
+  if (reloadingForNewDeploy) return null;
+  // The browser deferring resize notifications a frame (React Flow triggers
+  // it). Harmless, and reported without a stack.
+  const list = event.properties?.$exception_list as { value?: string }[] | undefined;
+  if (list?.some((e) => e.value?.startsWith('ResizeObserver loop'))) return null;
+  return event;
+}
 
 export function initAnalytics(): void {
   const debug = debugEnabled();
@@ -134,6 +150,7 @@ export function initAnalytics(): void {
       // land here too. Stack traces resolve via the source maps vite.config.ts
       // uploads on production builds.
       capture_exceptions: true,
+      before_send: dropNoiseExceptions,
       disable_surveys: false,
       session_recording: {
         maskAllInputs: true,
@@ -146,6 +163,10 @@ export function initAnalytics(): void {
   } catch {
     // Analytics must never break the app
   }
+}
+
+export function markReloadingForNewDeploy(): void {
+  reloadingForNewDeploy = true;
 }
 
 export function isAnalyticsEnabled(): boolean {
