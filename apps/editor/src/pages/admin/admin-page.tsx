@@ -5,7 +5,9 @@ import { CLOUD_ENABLED } from '../../lib/auth';
 import {
   AdminDashboardResponse,
   ApiError,
+  BtcppSection,
   CommercialInterestsSection,
+  ErrorsSection,
   PostHogSection,
   ProjectsSection,
   SectionError,
@@ -175,6 +177,153 @@ const EventsCard: React.FC<{ data: PostHogSection | SectionError }> = ({ data })
     </div>
   );
 };
+
+// Import formats are 'b3' | 'btcpp'; export formats are 'json' | 'compact' |
+// 'btcpp_v4' | 'btcpp_v3'. The classic editor sends no format (behavior3 only).
+const BTCPP_COLUMNS: { label: string; matches: (event: string, format: string) => boolean }[] = [
+  { label: 'JSON imports', matches: (e, f) => e === 'import' && !f.startsWith('btcpp') },
+  { label: 'BT.CPP imports', matches: (e, f) => e === 'import' && f.startsWith('btcpp') },
+  { label: 'JSON exports', matches: (e, f) => e === 'export' && !f.startsWith('btcpp') },
+  { label: 'BT.CPP v4 exports', matches: (e, f) => e === 'export' && f === 'btcpp_v4' },
+  { label: 'BT.CPP v3 exports', matches: (e, f) => e === 'export' && f === 'btcpp_v3' },
+];
+
+const BtcppCard: React.FC<{ data: BtcppSection | SectionError }> = ({ data }) => {
+  if (isSectionError(data)) {
+    return (
+      <div className="card">
+        <h2 className="text-xl font-medium mb-4">BT.CPP demand</h2>
+        <SectionErrorBox source="BT.CPP stats" error={data.error} />
+      </div>
+    );
+  }
+
+  const weeks = [...new Set(data.weekly.map((row) => row.week))];
+  const countFor = (week: string, column: (typeof BTCPP_COLUMNS)[number]) =>
+    data.weekly
+      .filter((row) => row.week === week && column.matches(row.event, row.format))
+      .reduce((sum, row) => sum + row.count, 0);
+
+  return (
+    <div className="card">
+      <h2 className="text-xl font-medium mb-4">BT.CPP demand</h2>
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-md border border-divider p-4">
+            <div className="text-2xl font-medium">{formatNumber(data.users30d.btcpp)}</div>
+            <div className="mt-1 text-sm text-muted">Users trying BT.CPP (30d)</div>
+            <div className="mt-2 text-xs text-faint">
+              of {formatNumber(data.users30d.anyFormat)} who imported or exported anything
+            </div>
+          </div>
+          <RankedTable
+            title="Failed imports by reason (30d)"
+            rows={data.failures.map((row) => ({
+              name: `${row.format === 'btcpp' ? 'BT.CPP' : 'JSON'} · ${row.reason}`,
+              value: row.count,
+            }))}
+          />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted">
+                <th className="pb-2 font-medium">Week of</th>
+                {BTCPP_COLUMNS.map((column) => (
+                  <th key={column.label} className="pb-2 pl-4 font-medium text-right whitespace-nowrap">
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((week) => (
+                <tr key={week} className="border-t border-divider">
+                  <td className="py-1.5 pr-4 whitespace-nowrap">{week}</td>
+                  {BTCPP_COLUMNS.map((column) => (
+                    <td key={column.label} className="py-1.5 text-right text-muted tabular-nums">
+                      {formatNumber(countFor(week, column))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {weeks.length === 0 && (
+                <tr>
+                  <td className="py-1.5 text-faint" colSpan={BTCPP_COLUMNS.length + 1}>
+                    No imports or exports in the last 8 weeks
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ErrorsCard: React.FC<{ data: ErrorsSection | SectionError }> = ({ data }) => (
+  <div className="card">
+    <div className="flex justify-between items-baseline mb-4">
+      <h2 className="text-xl font-medium">Errors (PostHog error tracking, last 30 days)</h2>
+      {!isSectionError(data) && (
+        <a href={data.url} target="_blank" rel="noreferrer" className="text-sm text-accent hover:underline">
+          Open in PostHog
+        </a>
+      )}
+    </div>
+    {isSectionError(data) ? (
+      <SectionErrorBox source="error stats" error={data.error} />
+    ) : (
+      <div className="space-y-6">
+        <div className="flex gap-6 text-sm text-faint">
+          <span>{formatNumber(data.total30d)} exceptions</span>
+          <span>{formatNumber(data.users30d)} users affected</span>
+        </div>
+        {data.daily.length > 0 && (
+          <BarList points={data.daily.map((day) => ({ label: day.date, value: day.count }))} />
+        )}
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-muted">
+              <th className="pb-2 font-medium">Error</th>
+              <th className="pb-2 font-medium text-right">Events</th>
+              <th className="pb-2 pl-4 font-medium text-right">Users</th>
+              <th className="pb-2 pl-4 font-medium text-right">Last seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.top.map((row) => (
+              <tr key={`${row.type}-${row.message}`} className="border-t border-divider">
+                <td
+                  className="py-1.5 pr-4 truncate max-w-0 w-full"
+                  title={`${row.type}: ${row.message}`}
+                >
+                  <span className="font-medium">{row.type}</span>
+                  {row.message && <span className="text-muted">: {row.message}</span>}
+                </td>
+                <td className="py-1.5 text-right tabular-nums">{formatNumber(row.count)}</td>
+                <td className="py-1.5 pl-4 text-right text-muted tabular-nums">
+                  {formatNumber(row.users)}
+                </td>
+                <td className="py-1.5 pl-4 text-right text-faint whitespace-nowrap">
+                  {new Date(row.lastSeen).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+            {data.top.length === 0 && (
+              <tr>
+                <td className="py-1.5 text-faint" colSpan={4}>
+                  No exceptions in the last 30 days
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+);
 
 const FunnelCard: React.FC<{ data: PostHogSection | SectionError }> = ({ data }) => (
   <div className="card">
@@ -450,7 +599,9 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <TrafficCard data={data.traffic} />
+      <ErrorsCard data={data.errors} />
       <EventsCard data={data.posthog} />
+      <BtcppCard data={data.btcpp} />
       <FunnelCard data={data.posthog} />
       <RetentionCard data={data.posthog} />
       <CommercialInterestsCard data={data.interests} />

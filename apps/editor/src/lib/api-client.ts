@@ -113,6 +113,20 @@ export type PostHogSection = {
   };
 };
 
+export type BtcppSection = {
+  weekly: { week: string; event: string; format: string; count: number }[];
+  failures: { format: string; reason: string; count: number }[];
+  users30d: { btcpp: number; anyFormat: number };
+};
+
+export type ErrorsSection = {
+  total30d: number;
+  users30d: number;
+  daily: { date: string; count: number }[];
+  top: { type: string; message: string; count: number; users: number; lastSeen: number }[];
+  url: string;
+};
+
 export type CommercialInterestsSection = {
   total: number;
   byPlan: { name: string; value: number }[];
@@ -148,6 +162,8 @@ export type AdminDashboardResponse = {
   cached: boolean;
   traffic: TrafficSection | SectionError;
   posthog: PostHogSection | SectionError;
+  btcpp: BtcppSection | SectionError;
+  errors: ErrorsSection | SectionError;
   projects: ProjectsSection | SectionError;
   interests: CommercialInterestsSection | SectionError;
 };
