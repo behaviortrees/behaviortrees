@@ -20,3 +20,10 @@ overrides:
 # editor's source maps to PostHog during the Vercel build.
 onlyBuiltDependencies:
   - '@posthog/cli'
+
+# Vercel typechecks api/ functions with a TypeScript language service that
+# doesn't resolve symlinks, so from @types/node's symlinked path it can't see
+# undici-types inside .pnpm, and fetch's Response types as an empty interface.
+# Hoisting it to the root node_modules puts it on that lookup path.
+publicHoistPattern:
+  - undici-types
