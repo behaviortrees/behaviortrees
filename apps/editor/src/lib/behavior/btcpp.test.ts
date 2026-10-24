@@ -209,12 +209,15 @@ describe('category guesses', () => {
 
 describe('bad input', () => {
   it.each([
-    ['<root><BehaviorTree ID="T">', /Not valid XML/],
-    ['<!DOCTYPE x [<!ENTITY a "b">]><root/>', /DOCTYPE/],
-    ['<behavior_tree/>', /expected a <root> element/],
-    ['<root BTCPP_format="4"/>', /no <BehaviorTree> or <TreeNodesModel>/],
-  ])('rejects %s', (xml, error) => {
+    ['<root><BehaviorTree ID="T">', /Not valid XML/, 'invalid_xml'],
+    ['<!DOCTYPE x [<!ENTITY a "b">]><root/>', /DOCTYPE/, 'xml_doctype'],
+    ['<behavior_tree/>', /expected a <root> element/, 'not_behavior_tree'],
+    ['<root BTCPP_format="4"/>', /no <BehaviorTree> or <TreeNodesModel>/, 'not_behavior_tree'],
+  ])('rejects %s', (xml, error, reason) => {
     expect(() => parseBtcppXml(xml, DEFAULT_NODES, 'horizontal')).toThrow(error);
+    expect(() => parseBtcppXml(xml, DEFAULT_NODES, 'horizontal')).toThrow(
+      expect.objectContaining({ name: 'InvalidFileError', reason })
+    );
   });
 });
 

@@ -172,6 +172,12 @@ describe('parseImportedJson', () => {
     expect(parseImportedJson(tree.custom_nodes!).kind).toBe('nodes');
   });
 
+  it.each([null, 'text', { title: 'not a tree' }])('rejects %j as not a behavior tree', (data) => {
+    expect(() => parseImportedJson(data)).toThrow(
+      expect.objectContaining({ name: 'InvalidFileError', reason: 'not_behavior_tree' })
+    );
+  });
+
   it('converts legacy React-schema projects', () => {
     const legacy = {
       version: '1.0.0',

@@ -24,6 +24,15 @@ export type RuntimeSegment =
   | 'evaluating'
   | 'other';
 
+export type ImportFailureReason =
+  | 'invalid_json'
+  | 'invalid_xml'
+  | 'xml_doctype'
+  | 'not_behavior_tree'
+  | 'no_open_project'
+  | 'nodes_file_needs_editor'
+  | 'unexpected';
+
 export type UsageMode = 'solo' | 'team_2_5' | 'team_6_20' | 'team_21_plus';
 
 export type ProductionObstacle =
@@ -78,6 +87,11 @@ export type AnalyticsEventMap = {
   project_created: Record<string, never>;
   project_saved: Record<string, unknown>;
   import: { type: string; source: 'paste' | 'file' | 'example'; format: 'b3' | 'btcpp' };
+  import_failed: {
+    source: 'paste' | 'file' | 'example';
+    format: 'b3' | 'btcpp';
+    reason: ImportFailureReason;
+  };
   export: {
     type: 'project' | 'tree' | 'nodes';
     format: 'json' | 'compact' | 'btcpp_v4' | 'btcpp_v3';
@@ -145,6 +159,17 @@ export function track<Event extends keyof AnalyticsEventMap>(
   if (!enabled) return;
   try {
     posthog.capture(event, props);
+  } catch {
+    // no-op
+  }
+}
+
+// For errors the app catches but that still mean a bug; uncaught ones are
+// captured automatically.
+export function captureError(error: unknown, props?: Record<string, unknown>): void {
+  if (!enabled) return;
+  try {
+    posthog.captureException(error, props);
   } catch {
     // no-op
   }

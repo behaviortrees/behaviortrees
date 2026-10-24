@@ -13,6 +13,7 @@ import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToTree, parseImportedJson } from '../../lib/behavior/b3';
 import { isLikelyXml, parseBtcppXml, summarizeIssues } from '../../lib/behavior/btcpp';
 import { track } from '../../lib/analytics';
+import { trackImportError } from '../../lib/import-tracking';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { toast } from 'sonner';
 import { ClipboardPaste, FileUp, Workflow } from 'lucide-react';
@@ -59,6 +60,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 			} else if (imported.kind === 'tree') {
 				if (!store.project) {
 					toast.error('Open a project before importing a tree');
+					track('import_failed', { source, format: 'b3', reason: 'no_open_project' });
 					return false;
 				}
 				const { tree, nodes } = b3ToTree(imported.tree, store.project.nodes);
@@ -68,6 +70,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 			} else {
 				if (!store.project) {
 					toast.error('Open a project before importing nodes');
+					track('import_failed', { source, format: 'b3', reason: 'no_open_project' });
 					return false;
 				}
 				store.addNodes(imported.nodes);
@@ -79,6 +82,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 			return true;
 		} catch (error) {
 			console.error('Failed to import', error);
+			trackImportError(error, { source, format: 'b3' });
 			toast.error('Not a valid behavior tree JSON');
 			return false;
 		}
@@ -90,6 +94,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 		const store = useProjectStore.getState();
 		if (!store.project) {
 			toast.error('Open a project before importing');
+			track('import_failed', { source, format: 'btcpp', reason: 'no_open_project' });
 			return false;
 		}
 		try {
@@ -131,6 +136,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 			return true;
 		} catch (error) {
 			console.error('Failed to import XML', error);
+			trackImportError(error, { source, format: 'btcpp' });
 			toast.error(error instanceof Error ? error.message : 'Not a valid BehaviorTree.CPP file');
 			return false;
 		}
@@ -142,6 +148,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 		try {
 			json = JSON.parse(text);
 		} catch {
+			track('import_failed', { source, format: 'b3', reason: 'invalid_json' });
 			toast.error('Not valid JSON or XML. Check the file contents.');
 			return false;
 		}
