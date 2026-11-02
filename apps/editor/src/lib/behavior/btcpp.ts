@@ -107,8 +107,14 @@ function parseDocument(text: string): Element {
   const doc = new DOMParser().parseFromString(text.replace(/^\uFEFF/, ''), 'application/xml');
   const error = doc.getElementsByTagName('parsererror')[0];
   if (error) {
-    const detail = (error.textContent ?? '').trim().split('\n')[0];
-    throw new InvalidFileError(`Not valid XML${detail ? `: ${detail}` : ''}`, 'invalid_xml');
+    // Chrome and Safari prefix the message with a heading; Firefox puts the
+    // file location on the following lines
+    const detail = (error.textContent ?? '')
+      .replace(/^\s*This page contains the following errors:\s*/i, '')
+      .trim()
+      .split('\n')[0]
+      .slice(0, 160);
+    throw new InvalidFileError(`Not valid XML${detail ? `: ${detail}` : ''}`, 'invalid_xml', detail || undefined);
   }
   if (doc.documentElement.tagName !== 'root') {
     throw new InvalidFileError('Not a BehaviorTree.CPP file: expected a <root> element', 'not_behavior_tree');

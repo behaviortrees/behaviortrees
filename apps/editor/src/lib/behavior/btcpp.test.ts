@@ -219,6 +219,12 @@ describe('bad input', () => {
       expect.objectContaining({ name: 'InvalidFileError', reason })
     );
   });
+
+  it('keeps the parser message as the detail for invalid XML', () => {
+    expect(() => parseBtcppXml('<root><BehaviorTree ID="T">', DEFAULT_NODES, 'horizontal')).toThrow(
+      expect.objectContaining({ detail: expect.stringMatching(/unclosed tag: BehaviorTree/) })
+    );
+  });
 });
 
 describe('round trips', () => {

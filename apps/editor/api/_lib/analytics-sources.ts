@@ -42,6 +42,11 @@ export type ErrorStats = {
   url: string;
 };
 
+// Counts visitors by browser. posthog.reset() ran on every anonymous page
+// load until Nov 2026, splitting one visitor into many persons, so
+// $device_id is the stable key for the history recorded before the fix.
+const VISITOR = `coalesce(toString(properties.$device_id), toString(person_id))`;
+
 const TRACKED_EVENTS = [
   'example_loaded',
   'tree_created',
@@ -93,7 +98,7 @@ async function posthogQuery(query: string): Promise<unknown[][]> {
 export async function fetchTrafficStats(): Promise<TrafficStats> {
   const [aggregate, sessions, today, timeseries, pages, sources] = await Promise.all([
     posthogQuery(
-      `select count(distinct person_id) as visitors, count() as pageviews
+      `select count(distinct ${VISITOR}) as visitors, count() as pageviews
        from events
        where event = '$pageview' and timestamp >= now() - interval 30 day`
     ),
@@ -105,13 +110,13 @@ export async function fetchTrafficStats(): Promise<TrafficStats> {
        where $start_timestamp >= now() - interval 30 day and $pageview_count > 0`
     ),
     posthogQuery(
-      `select count(distinct person_id) as visitors, count() as pageviews
+      `select count(distinct ${VISITOR}) as visitors, count() as pageviews
        from events
        where event = '$pageview' and timestamp >= toStartOfDay(now())`
     ),
     posthogQuery(
       `select toString(toDate(timestamp)) as day,
-              count(distinct person_id) as visitors,
+              count(distinct ${VISITOR}) as visitors,
               count() as pageviews
        from events
        where event = '$pageview' and timestamp >= now() - interval 30 day
@@ -120,7 +125,7 @@ export async function fetchTrafficStats(): Promise<TrafficStats> {
     ),
     posthogQuery(
       `select coalesce(toString(properties.$pathname), '/') as page,
-              count(distinct person_id) as visitors
+              count(distinct ${VISITOR}) as visitors
        from events
        where event = '$pageview' and timestamp >= now() - interval 30 day
        group by page
@@ -186,7 +191,7 @@ export async function fetchPostHogStats(): Promise<PostHogStats> {
        order by day asc`
     ),
     posthogQuery(
-      `select event, count(distinct distinct_id) as users
+      `select event, count(distinct ${VISITOR}) as users
        from events
        where timestamp >= now() - interval 30 day
          and event in ('app_session_started','activation_completed','pricing_viewed',
@@ -196,11 +201,11 @@ export async function fetchPostHogStats(): Promise<PostHogStats> {
        order by users desc`
     ),
     posthogQuery(
-      `select distinct_id, event, toString(toDate(timestamp)) as day
+      `select ${VISITOR} as visitor, event, toString(toDate(timestamp)) as day
        from events
        where timestamp >= now() - interval 70 day
          and event in ('activation_completed','app_session_started')
-       group by distinct_id, event, day
+       group by visitor, event, day
        order by day asc
        limit 50000`
     ),
@@ -298,8 +303,8 @@ export async function fetchBtcppStats(): Promise<BtcppStats> {
        order by c desc`
     ),
     posthogQuery(
-      `select count(distinct if(toString(properties.format) like 'btcpp%', person_id, null)) as btcpp,
-              count(distinct person_id) as any_format
+      `select count(distinct if(toString(properties.format) like 'btcpp%', ${VISITOR}, null)) as btcpp,
+              count(distinct ${VISITOR}) as any_format
        from events
        where event in ('import', 'export', 'import_failed')
          and timestamp >= now() - interval 30 day`
@@ -329,7 +334,7 @@ export async function fetchErrorStats(): Promise<ErrorStats> {
   // $exception_list is a JSON array, outermost exception first
   const [totals, daily, top] = await Promise.all([
     posthogQuery(
-      `select count() as c, count(distinct person_id) as users
+      `select count() as c, count(distinct ${VISITOR}) as users
        from events
        where event = '$exception' and timestamp >= now() - interval 30 day`
     ),
@@ -344,7 +349,7 @@ export async function fetchErrorStats(): Promise<ErrorStats> {
       `select JSONExtractString(properties.$exception_list, 1, 'type') as type,
               JSONExtractString(properties.$exception_list, 1, 'value') as message,
               count() as c,
-              count(distinct person_id) as users,
+              count(distinct ${VISITOR}) as users,
               toUnixTimestamp(max(timestamp)) as last_seen
        from events
        where event = '$exception' and timestamp >= now() - interval 30 day

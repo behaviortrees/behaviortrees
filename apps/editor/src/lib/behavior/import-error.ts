@@ -4,10 +4,13 @@ export type InvalidFileReason = 'invalid_xml' | 'xml_doctype' | 'not_behavior_tr
 
 export class InvalidFileError extends Error {
   readonly reason: InvalidFileReason;
+  // Short parser message, safe to send to analytics
+  readonly detail?: string;
 
-  constructor(message: string, reason: InvalidFileReason) {
+  constructor(message: string, reason: InvalidFileReason, detail?: string) {
     super(message);
     this.name = 'InvalidFileError';
     this.reason = reason;
+    this.detail = detail;
   }
 }
