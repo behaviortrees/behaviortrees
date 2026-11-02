@@ -91,6 +91,8 @@ export type AnalyticsEventMap = {
     source: 'paste' | 'file' | 'example';
     format: 'b3' | 'btcpp';
     reason: ImportFailureReason;
+    // The parser's message for invalid_xml, e.g. "1:27: unclosed tag: Sequence"
+    detail?: string;
   };
   export: {
     type: 'project' | 'tree' | 'nodes';
@@ -206,9 +208,13 @@ export function identifyUser(id: string, props?: Record<string, unknown>): void 
   }
 }
 
+// Only a signed-in person is reset. Resetting an anonymous visitor (every
+// load where Clerk finds no session) mints a new person per visit, which
+// splits users and breaks retention.
 export function resetUser(): void {
   if (!enabled) return;
   try {
+    if (posthog.get_property('$user_state') !== 'identified') return;
     posthog.reset();
     posthog.register({ editor: 'react', signed_in: false });
   } catch {

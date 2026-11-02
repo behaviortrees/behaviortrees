@@ -14,6 +14,19 @@ describe('trackImportError', () => {
     expect(captureError).not.toHaveBeenCalled();
   });
 
+  it('includes the parser detail when there is one', () => {
+    trackImportError(new InvalidFileError('Not valid XML', 'invalid_xml', '1:27: unclosed tag: Sequence'), {
+      source: 'file',
+      format: 'btcpp',
+    });
+    expect(track).toHaveBeenCalledWith('import_failed', {
+      source: 'file',
+      format: 'btcpp',
+      reason: 'invalid_xml',
+      detail: '1:27: unclosed tag: Sequence',
+    });
+  });
+
   it('reports any other error as an importer bug', () => {
     const bug = new TypeError("Cannot read properties of undefined (reading 'id')");
     trackImportError(bug, { source: 'file', format: 'b3' });
