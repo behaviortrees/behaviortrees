@@ -15,7 +15,7 @@ Typical flow when a user wants a behavior tree: write it as behavior3 JSON, chec
 const TREE_FORMAT = `behavior3 JSON: {"title": "...", "root": "<id of the first node under the root>", "nodes": {"<id>": {"name": "<node type>", "title": "<optional label>", "children": ["<id>", ...] (composites, in run order) or "child": "<id>" (decorators), "properties": {...}}}, "custom_nodes": [{"name": "IsEnemyVisible", "category": "condition"}]}. Positions ("display") are optional. Any node name that isn't built in (see list_node_types) must be declared in custom_nodes with a category of action, condition, composite or decorator. A whole project ({"trees": [...], "custom_nodes": [...]}) or BehaviorTree.CPP XML also works.`;
 
 const treeInput = z
-	.union([z.string(), z.record(z.unknown())])
+	.union([z.string(), z.record(z.string(), z.unknown())])
 	.describe(`The tree: ${TREE_FORMAT}`);
 
 const text = (value: unknown) => ({
