@@ -172,6 +172,10 @@ importers:
       astro:
         specifier: ^7.4.0
         version: 7.4.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.1)
+    devDependencies:
+      '@behaviortrees/examples':
+        specifier: workspace:*
+        version: link:../../packages/examples
 
   packages/examples: {}
 

@@ -19,7 +19,7 @@ const INTEGRATION_FEATURES = [
   'Migration and onboarding',
 ];
 
-const PricingContent: React.FC<PricingContentProps> = ({ initialEmail }) => {
+export const PricingContent: React.FC<PricingContentProps> = ({ initialEmail }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
