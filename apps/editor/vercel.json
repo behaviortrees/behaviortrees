@@ -3,7 +3,8 @@
   "buildCommand": "pnpm exec turbo run build --filter=@behaviortrees/editor --filter=@behaviortrees/site && cp -R ../site/dist/. dist/",
   "outputDirectory": "dist",
   "redirects": [
-    { "source": "/:route(editor|projects|settings|admin|pricing|privacy|changelog)/", "destination": "/:route", "permanent": true }
+    { "source": "/:route(editor|projects|settings|admin|pricing|privacy|changelog)/", "destination": "/:route", "permanent": true },
+    { "source": "/sitemap.xml", "destination": "/sitemap-index.xml", "permanent": true }
   ],
   "headers": [
     { "source": "/learn/:slug.md", "headers": [{ "key": "Content-Type", "value": "text/markdown; charset=utf-8" }] },
