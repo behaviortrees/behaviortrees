@@ -10,6 +10,27 @@ A free, open-source visual editor for behavior trees, live at [behaviortrees.com
 
 Originally based on [behavior3editor](https://github.com/behavior3/behavior3editor) by Renato de Pontes Pereira, since rebuilt as a modern React editor on the Nocturne design system and extended with a guides site. The original AngularJS editor lives on at [old.behaviortrees.com](https://old.behaviortrees.com).
 
+## MCP server and CLI
+
+This repo also contains an [MCP](https://modelcontextprotocol.io) (Model Context Protocol) server for behavior trees, so AI assistants like Claude can write a tree, check it, and hand you a link that opens it in the editor. Its source is in [`packages/cli`](packages/cli) and it's built on the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) (`@modelcontextprotocol/sdk`). The tools are registered in [`packages/cli/src/mcp.ts`](packages/cli/src/mcp.ts), and the Streamable HTTP transport is in [`src/http.ts`](packages/cli/src/http.ts).
+
+| MCP tool | What it does |
+|------|------------|
+| `validate_tree` | Checks a behavior3 JSON or BehaviorTree.CPP XML tree for structural errors: dangling children, nodes with two parents, cycles, decorators with more than one child, leaves with children, unknown node names |
+| `create_editor_link` | Returns a URL that opens the tree in the editor at behaviortrees.com |
+| `convert_tree` | Converts between behavior3 JSON and BehaviorTree.CPP XML (v4 for Groot2 and ROS 2 Jazzy, v3 for Humble) |
+| `list_node_types` | Lists the built-in behavior3 nodes |
+| `get_example` | Returns example trees |
+| `read_guide` | Returns the behaviortrees.com guides as Markdown |
+
+All tools are read-only. Connect to the hosted server, or run it yourself:
+
+- **Remote (Streamable HTTP):** `https://www.behaviortrees.com/mcp`
+- **Local (stdio):** `npx -y behaviortrees mcp`. The [`behaviortrees`](https://www.npmjs.com/package/behaviortrees) npm package is also a CLI (`npx behaviortrees validate tree.json`) and a library.
+- **Claude Code:** `claude mcp add --transport http behaviortrees https://www.behaviortrees.com/mcp`
+
+It's listed in the official MCP Registry as `io.github.behaviortrees/behaviortrees`. See [`packages/cli/README.md`](packages/cli/README.md) for details.
+
 ## What's in this repo
 
 A pnpm + [Turborepo](https://turborepo.com) monorepo:
@@ -19,6 +40,7 @@ A pnpm + [Turborepo](https://turborepo.com) monorepo:
 | `apps/editor/` | Main editor (React + TypeScript + React Flow) | [behaviortrees.com](https://www.behaviortrees.com) |
 | `apps/editor-classic/` | Classic editor (AngularJS + gulp) | [old.behaviortrees.com](https://old.behaviortrees.com) |
 | `apps/site/` | Guides and articles (Astro) | [behaviortrees.com/learn](https://www.behaviortrees.com/learn/) |
+| `packages/cli/` | `behaviortrees` MCP server, CLI and library | [npm](https://www.npmjs.com/package/behaviortrees), and [behaviortrees.com/mcp](https://www.behaviortrees.com/mcp) |
 | `packages/examples/` | Shared example trees consumed by both editors | bundled into both editors |
 
 `apps/editor-classic` is intentionally **not** a workspace member — its gulp 3 toolchain keeps its own npm lockfile. Never run pnpm inside it.
@@ -30,6 +52,8 @@ A pnpm + [Turborepo](https://turborepo.com) monorepo:
 - **Manual and auto layout**: drag nodes around, or press `a` to auto-organize the whole tree
 - **Multiple trees per project**: create and manage as many trees as you need
 - **JSON import/export**: an open format that works with any behavior3-compatible runtime
+- **BehaviorTree.CPP XML import/export**: v4 and v3, including Groot2 and ROS 2 Nav2 trees
+- **Shareable links**: Copy link puts the whole tree in a URL that opens it in the editor
 - **No lock-in**: runs in the browser, no accounts, no external tools or engines required
 
 ## Development
