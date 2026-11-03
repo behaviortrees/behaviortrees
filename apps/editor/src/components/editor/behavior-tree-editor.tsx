@@ -22,6 +22,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import { descendantIds, readTreeLayout } from '../../lib/behavior/organize';
+import { mergeFlowNodes } from '../../lib/flow-nodes';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { Block } from '../../types';
 import EditorLayout from '../layouts/editor-layout';
@@ -120,12 +121,19 @@ const BehaviorTreeEditor: React.FC = () => {
   // Cache to store previous positions of nodes
   const prevNodePositionsRef = useRef<{[key: string]: {x: number, y: number}}>({});
 
+  const syncedTreeIdRef = useRef<string | undefined>(undefined);
+
   // Convert project tree data to ReactFlow nodes and edges
   const syncTreeToFlow = useCallback(() => {
+    // The position cache belongs to the tree it was filled from
+    if (syncedTreeIdRef.current !== selectedTreeId) {
+      syncedTreeIdRef.current = selectedTreeId;
+      prevNodePositionsRef.current = {};
+    }
+
     if (!project || !selectedTreeId || !project.trees[selectedTreeId]) {
       setNodes([]);
       setEdges([]);
-      // Clear the position cache when tree changes
       prevNodePositionsRef.current = {};
       return;
     }
@@ -173,68 +181,7 @@ const BehaviorTreeEditor: React.FC = () => {
       type: 'default',
     }));
 
-    // Only update nodes if there are new nodes or node data changes
-    setNodes(currentNodes => {
-      // First time setup - just use the provided nodes
-      if (currentNodes.length === 0) {
-        return flowNodes;
-      }
-
-      // If node count changes, we need to update
-      if (currentNodes.length !== flowNodes.length) {
-        // Create a mapping of existing nodes by ID to preserve positions
-        const currentNodeMap = new Map(
-          currentNodes.map(node => [node.id, node])
-        );
-
-        // Return new nodes but preserve positions of existing ones
-        return flowNodes.map(newNode => {
-          const existingNode = currentNodeMap.get(newNode.id);
-          if (existingNode) {
-            // Preserve position of existing node
-            return {
-              ...newNode,
-              position: existingNode.position
-            };
-          }
-          return newNode;
-        });
-      }
-
-      // Compare nodes to see if any data (except position) has changed
-      // This avoids unnecessary rerenders when only UI state changes
-      const nodeChanges = flowNodes.filter(newNode => {
-        const existingNode = currentNodes.find(node => node.id === newNode.id);
-        if (!existingNode) return true;
-
-        // Compare data except position
-        const { position: _newPosition, ...newDataNoPos } = newNode.data;
-        const { position: _existingPosition, ...existingDataNoPos } = existingNode.data;
-
-        return JSON.stringify(newDataNoPos) !== JSON.stringify(existingDataNoPos);
-      });
-
-      // If no data changes, keep current state to avoid re-renders
-      if (nodeChanges.length === 0) {
-        return currentNodes;
-      }
-
-      // Update nodes while preserving positions
-      return currentNodes.map(node => {
-        const newNode = flowNodes.find(n => n.id === node.id);
-        if (!newNode) return node;
-
-        // Preserve position but update data
-        return {
-          ...newNode,
-          position: node.position,
-          data: {
-            ...newNode.data,
-            position: node.position // Ensure data position is also updated
-          }
-        };
-      });
-    });
+    setNodes(currentNodes => mergeFlowNodes(currentNodes, flowNodes));
 
     // Similar approach for edges - only update if needed
     setEdges(currentEdges => {
@@ -267,8 +214,8 @@ const BehaviorTreeEditor: React.FC = () => {
     syncTreeToFlow();
   }, [syncTreeToFlow, refreshCount]);
 
-  // Switching trees (including after an import) invalidates the position
-  // cache and needs the viewport refit to the new tree's blocks
+  // Switching trees (including after an import) needs the viewport refit to
+  // the new tree's blocks
   const lastTreeIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     // Wait for the instance before recording the tree as fitted: on first
@@ -276,7 +223,6 @@ const BehaviorTreeEditor: React.FC = () => {
     // at its minZoom, leaving tall trees (like ones opened from links) cut off
     if (!reactFlowInstance || selectedTreeId === lastTreeIdRef.current) return;
     lastTreeIdRef.current = selectedTreeId;
-    prevNodePositionsRef.current = {};
     // Wait for the synced nodes to render before fitting
     const id = window.setTimeout(() => {
       reactFlowInstance.fitView({ padding: 0.15, maxZoom: 1 });
