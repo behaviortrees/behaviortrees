@@ -79,4 +79,4 @@ const { url } = await createEditorLink(json);
 
 ## License
 
-AGPL-3.0-only. Source: [github.com/behaviortrees/behaviortrees](https://github.com/behaviortrees/behaviortrees/tree/main/packages/cli).
+AGPL-3.0-only (see LICENSE). Portions are derived from the MIT-licensed [behavior3editor](https://github.com/behavior3/behavior3editor) by Renato de Pontes Pereira (see LICENSE-MIT). Source: [github.com/behaviortrees/behaviortrees](https://github.com/behaviortrees/behaviortrees/tree/main/packages/cli).
