@@ -1,0 +1,119 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "behaviortrees",
+  "version": "0.1.1",
+  "description": "Validate, convert and open behavior trees for game AI and robotics. Checks behavior3 JSON and BehaviorTree.CPP XML trees for structural errors, converts between the two formats, and returns links that open trees in the behaviortrees.com visual editor.",
+  "author": {
+    "name": "behaviortrees.com",
+    "url": "https://www.behaviortrees.com"
+  },
+  "homepage": "https://www.behaviortrees.com",
+  "repository": "https://github.com/behaviortrees/behaviortrees",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "behavior trees",
+    "game AI",
+    "robotics",
+    "behavior3",
+    "BehaviorTree.CPP",
+    "ROS 2",
+    "Nav2"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "behaviortrees.com",
+        "shortDescription": "Build and check behavior trees",
+        "longDescription": "Design behavior trees for game AI and robotics with ChatGPT, check them for mistakes, and open them in a visual editor.\n\n- Validate a tree written as behavior3 JSON or BehaviorTree.CPP XML. Finds missing or dangling children, nodes with two parents, cycles, decorators with more than one child, leaves with children and unknown node names.\n- Open a tree in the behaviortrees.com editor through a link, laid out and editable, with no account. The tree travels inside the link, so nothing is uploaded or stored.\n- Convert between behavior3 JSON and BehaviorTree.CPP XML: v4 for Groot2 and ROS 2 Jazzy, v3 for ROS 2 Humble.\n- Look up the built-in behavior3 nodes, start from complete example trees, and read the behaviortrees.com guides on concepts like selectors, sequences, decorators and blackboards.\n\nAll tools are read-only and need no sign-in.",
+        "developerName": "behaviortrees.com",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Validate behavior trees",
+          "Convert between behavior3 JSON and BehaviorTree.CPP XML",
+          "Open trees in the visual editor",
+          "Example trees and guides"
+        ],
+        "websiteURL": "https://www.behaviortrees.com",
+        "supportURL": "https://github.com/behaviortrees/behaviortrees/issues",
+        "privacyPolicyURL": "https://www.behaviortrees.com/privacy",
+        "termsOfServiceURL": "https://www.behaviortrees.com/terms",
+        "defaultPrompt": [
+          "Design a behavior tree for an enemy guard and open it in the editor",
+          "Convert the enemy patrol example to BehaviorTree.CPP XML",
+          "Explain how a behavior tree selector works, with an example"
+        ],
+        "brandColor": "#9184D9",
+        "brandColorDark": "#9184D9",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Design a tree, validate it and return an editor link",
+              "prompt": "Design a behavior tree for a stealth guard that patrols, investigates noises, and chases the player when spotted. Validate it and give me a link to open it in the editor.",
+              "tools_triggered": [
+                "validate_tree",
+                "create_editor_link"
+              ],
+              "expected_behavior": "Writes the tree as behavior3 JSON, calls validate_tree and fixes any errors it reports, then calls create_editor_link and gives a https://www.behaviortrees.com/editor#tree=... link. Opening the link shows the tree laid out in the editor."
+            },
+            {
+              "description": "Fetch an example tree and convert it to BehaviorTree.CPP XML",
+              "prompt": "Show me the enemy patrol example tree and convert it to BehaviorTree.CPP v4 XML.",
+              "tools_triggered": [
+                "get_example",
+                "convert_tree"
+              ],
+              "expected_behavior": "Calls get_example with id enemy-patrol, then convert_tree with to btcpp-v4, and shows XML beginning <root BTCPP_format=\"4\" main_tree_to_execute=\"Enemy_Patrol_AI\">, noting any conversion issues."
+            },
+            {
+              "description": "List the built-in node types",
+              "prompt": "Which built-in behavior3 nodes can I use without declaring them?",
+              "tools_triggered": [
+                "list_node_types"
+              ],
+              "expected_behavior": "Calls list_node_types and lists the composites (Sequence, Priority, MemSequence, MemPriority), decorators (Inverter, Repeater, MaxTime, ...) and leaves (Wait, Succeeder, Failer, ...)."
+            },
+            {
+              "description": "Answer a concept question from the guides",
+              "prompt": "Read the behaviortrees.com guide on blackboards and summarize how nodes share data.",
+              "tools_triggered": [
+                "read_guide"
+              ],
+              "expected_behavior": "Calls read_guide with slug behavior-tree-blackboard (or lists guides first) and summarizes the guide: what a blackboard is, key scoping, and common patterns and pitfalls."
+            },
+            {
+              "description": "Find structural errors in a broken tree",
+              "prompt": "Is this behavior tree valid? {\"title\":\"Door\",\"root\":\"a\",\"nodes\":{\"a\":{\"name\":\"Sequence\",\"children\":[\"b\",\"c\"]},\"b\":{\"name\":\"Inverter\",\"children\":[\"c\",\"d\"]},\"c\":{\"name\":\"Wait\"}}}",
+              "tools_triggered": [
+                "validate_tree"
+              ],
+              "expected_behavior": "Calls validate_tree and explains the errors it reports: the Inverter decorator has two children, node c has two parents, and child d doesn't exist. Suggests a corrected tree."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Unrelated request should not use the tools",
+              "prompt": "What's a good recipe for banana bread?"
+            },
+            {
+              "description": "Request for an action the tools can't perform",
+              "prompt": "Delete my saved projects on behaviortrees.com."
+            },
+            {
+              "description": "General programming question unrelated to behavior trees",
+              "prompt": "Write a Python function that sorts a list of dictionaries by a key."
+            }
+          ]
+        },
+        "commerce": false
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "Initial release: validate behavior3 JSON and BehaviorTree.CPP XML trees, convert between them, open trees in the behaviortrees.com editor through a link, and browse built-in nodes, example trees and guides."
+      }
+    }
+  }
+}

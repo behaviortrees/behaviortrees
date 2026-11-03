@@ -5,6 +5,7 @@ import HomePage from './pages/home/home-page';
 import { PricingContent } from './pages/pricing/pricing-page';
 import ChangelogPage from './pages/changelog/changelog-page';
 import PrivacyPage from './pages/privacy/privacy-page';
+import TermsPage from './pages/terms/terms-page';
 
 // Build-time HTML for the public pages, so crawlers and AI agents that don't
 // run JavaScript get the content instead of an empty #root. Browsers that do
@@ -64,6 +65,13 @@ export const ROUTES: PrerenderRoute[] = [
 		title: 'Privacy Notice - Behavior Tree Editor',
 		description: 'How behaviortrees.com handles projects, analytics and account data.',
 		element: <PrivacyPage />,
+	},
+	{
+		path: '/terms',
+		file: 'terms.html',
+		title: 'Terms of Service - Behavior Tree Editor',
+		description: 'Terms for using behaviortrees.com, its MCP server and the behaviortrees command-line tool.',
+		element: <TermsPage />,
 	},
 ];
 

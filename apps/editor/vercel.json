@@ -3,7 +3,7 @@
   "buildCommand": "pnpm exec turbo run build --filter=@behaviortrees/editor --filter=@behaviortrees/site && cp -R ../site/dist/. dist/",
   "outputDirectory": "dist",
   "redirects": [
-    { "source": "/:route(editor|projects|settings|admin|pricing|privacy|changelog)/", "destination": "/:route", "permanent": true },
+    { "source": "/:route(editor|projects|settings|admin|pricing|privacy|terms|changelog)/", "destination": "/:route", "permanent": true },
     { "source": "/sitemap.xml", "destination": "/sitemap-index.xml", "permanent": true }
   ],
   "headers": [
@@ -17,6 +17,8 @@
     { "source": "/mcp", "destination": "/api/mcp" },
     { "source": "/pricing", "destination": "/pricing.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/.well-known/openai-apps-challenge", "destination": "/api/openai-apps-challenge" },
     { "source": "/changelog", "destination": "/changelog.html" },
     { "source": "/:route(editor|projects|settings|admin)", "destination": "/app.html" }
   ]

@@ -110,6 +110,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 							<Link to="/privacy" className="text-accent-soft hover:underline">
 								Privacy
 							</Link>{' '}
+							·{' '}
+							<Link to="/terms" className="text-accent-soft hover:underline">
+								Terms
+							</Link>{' '}
 							· Prefer the classic editor? It lives on at{' '}
 							<a href="https://old.behaviortrees.com" className="text-accent-soft hover:underline">
 								old.behaviortrees.com
