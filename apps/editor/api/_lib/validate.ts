@@ -4,6 +4,15 @@ import { z } from 'zod';
 // JSON opaquely, so this only guards the fields sync depends on plus the
 // overall shape — full semantic validation stays client-side (parseImportedJson).
 
+// Timestamps drive last-write-wins, so one far in the future would freeze the
+// project against every later write and delete. A day covers clock skew.
+export const MAX_FUTURE_MS = 24 * 60 * 60 * 1000;
+
+export const isAcceptableTimestamp = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  !Number.isNaN(Date.parse(value)) &&
+  Date.parse(value) <= Date.now() + MAX_FUTURE_MS;
+
 const b3ProjectSchema = z.looseObject({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -11,7 +20,8 @@ const b3ProjectSchema = z.looseObject({
   trees: z.array(z.looseObject({})),
   updatedAt: z
     .string()
-    .refine((value) => !Number.isNaN(Date.parse(value)), 'invalid timestamp'),
+    .refine((value) => !Number.isNaN(Date.parse(value)), 'invalid timestamp')
+    .refine(isAcceptableTimestamp, 'updatedAt is in the future'),
 });
 
 export type ValidatedProject = z.infer<typeof b3ProjectSchema>;

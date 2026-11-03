@@ -20,5 +20,13 @@
     },
     "devDependencies": {
         "turbo": "^2.11.9"
+    },
+    "pnpm": {
+        "overrides": {
+            "eslint>minimatch": "^11.0.1",
+            "@eslint/config-array>minimatch": "^11.0.1",
+            "@eslint/eslintrc>minimatch": "^11.0.1",
+            "@typescript-eslint/typescript-estree>minimatch": "^11.0.1"
+        }
     }
 }

@@ -134,7 +134,7 @@ const jsonLd = isArticle
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content="https://www.behaviortrees.com/imgs/og-image.png" />
 
-    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
 
     <!-- PostHog pageviews via the first-party /ingest proxy. Same project and
          localStorage persistence as the editor, so a reader who opens the

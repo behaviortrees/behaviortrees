@@ -1,7 +1,11 @@
 import type { VercelRequest, VercelResponse } from '../_lib/http.js';
 import { requireUser } from '../_lib/auth.js';
 import { getProject, softDeleteProject, upsertProject } from '../_lib/db.js';
-import { MAX_PAYLOAD_BYTES, validateProjectPayload } from '../_lib/validate.js';
+import {
+  isAcceptableTimestamp,
+  MAX_PAYLOAD_BYTES,
+  validateProjectPayload,
+} from '../_lib/validate.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userId = await requireUser(req, res);
@@ -60,10 +64,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       case 'DELETE': {
         const deletedAtRaw = req.body?.deletedAt;
-        const deletedAt =
-          typeof deletedAtRaw === 'string' && !Number.isNaN(Date.parse(deletedAtRaw))
-            ? deletedAtRaw
-            : new Date().toISOString();
+        const deletedAt = isAcceptableTimestamp(deletedAtRaw)
+          ? deletedAtRaw
+          : new Date().toISOString();
         await softDeleteProject(userId, id, deletedAt);
         res.status(200).json({ deletedAt });
         return;
