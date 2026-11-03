@@ -89,6 +89,12 @@ describe('Streamable HTTP endpoint', () => {
 		const preflight = await fetch(url, { method: 'OPTIONS' });
 		expect(preflight.status).toBe(204);
 		expect(preflight.headers.get('access-control-allow-origin')).toBe('*');
-		expect((await fetch(url)).status).toBe(405);
+		expect((await fetch(url, { headers: { Accept: 'text/event-stream' } })).status).toBe(405);
+	});
+
+	it('sends browsers to the docs', async () => {
+		const response = await fetch(url, { headers: { Accept: 'text/html' }, redirect: 'manual' });
+		expect(response.status).toBe(302);
+		expect(response.headers.get('location')).toContain('packages/cli#readme');
 	});
 });
