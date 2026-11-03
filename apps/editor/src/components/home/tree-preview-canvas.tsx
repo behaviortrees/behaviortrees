@@ -1,6 +1,7 @@
 import React, { createContext, memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, { Edge, Handle, Node as FlowNode, NodeProps, Position, ReactFlowInstance } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { displayTitle } from '../../lib/behavior/display-title';
 import { cn } from '../../lib/utils';
 import { Block, Tree } from '../../types';
 import { NodeStatus, STATUS_COLOR } from './preview-status';
@@ -46,7 +47,7 @@ const PreviewNode: React.FC<NodeProps<Block>> = memo(({ id, data }) => {
 			)}
 			<div className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">{kindOf(data)}</div>
 			<div className="flex items-center justify-between gap-3 whitespace-nowrap text-[13px] text-fg">
-				{data.title || data.name}
+				{displayTitle(data.title || data.name, data.properties)}
 				<span
 					className="h-2 w-2 shrink-0 rounded-full transition-colors duration-200"
 					style={{ background: color ?? 'transparent' }}

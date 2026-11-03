@@ -32,6 +32,14 @@ export const CHANGELOG: ChangelogEntry[] = [
         kind: 'fixed',
         text: 'Mistyped addresses now show a not-found page instead of quietly opening the editor.',
       },
+      {
+        kind: 'fixed',
+        text: 'Built-in nodes show their settings in the title, like Wait 2000ms, instead of Wait <milliseconds>ms.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Large trees open zoomed out to fit, instead of partly off screen.',
+      },
     ],
   },
   {
