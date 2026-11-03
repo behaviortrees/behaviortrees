@@ -245,7 +245,11 @@ export function b3ToTree(data: B3Tree, knownNodes: Record<string, Node>): { tree
   const nodes = collectNodeTemplates(data, knownNodes);
   const templateOf = (name: string): Node | undefined => knownNodes[name] ?? nodes[name];
 
-  Object.values(data.nodes ?? {}).forEach((spec) => {
+  // Hand-written trees (shared links especially) may key nodes by id
+  // without repeating the id inside each node
+  const specs = Object.entries(data.nodes ?? {}).map(([key, spec]) => ({ ...spec, id: spec.id ?? key }));
+
+  specs.forEach((spec) => {
     const template = templateOf(spec.name);
     const block: Block = {
       id: spec.id,
@@ -270,7 +274,7 @@ export function b3ToTree(data: B3Tree, knownNodes: Record<string, Node>): { tree
   if (data.root && tree.blocks[data.root]) {
     connect(rootId, data.root);
   }
-  Object.values(data.nodes ?? {}).forEach((spec) => {
+  specs.forEach((spec) => {
     const children = spec.children ?? (spec.child ? [spec.child] : []);
     children.forEach((childId) => connect(spec.id, childId));
   });

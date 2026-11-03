@@ -47,6 +47,7 @@ export function getProjectOrigin(projectId: string): ProjectOrigin {
     stored === 'import' ||
     stored === 'example' ||
     stored === 'guide_example' ||
+    stored === 'shared_link' ||
     stored === 'restored'
   ) {
     return stored;

@@ -6,6 +6,7 @@ const pubDate = frontmatter?.pubDate;
 const updatedDate = frontmatter?.updatedDate;
 const isArticle = !!frontmatter;
 const isDraft = !!frontmatter?.draft;
+const noindex = isDraft || !!Astro.props.noindex;
 const isGuideIndex = Astro.props.variant === 'guide-index';
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -115,8 +116,11 @@ const jsonLd = isArticle
 
     <title>{title}</title>
     <meta name="description" content={description} />
-    {isDraft && <meta name="robots" content="noindex, nofollow" />}
-    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {!noindex && <link rel="canonical" href={canonical} />}
+    {isArticle && !isDraft && (
+        <link rel="alternate" type="text/markdown" href={canonical.replace(/\/$/, '.md')} />
+    )}
 
     <meta property="og:type" content={isArticle ? 'article' : 'website'} />
     <meta property="og:site_name" content="behaviortrees.com" />
@@ -233,7 +237,7 @@ const jsonLd = isArticle
         -->
 
         {
-            !isGuideIndex && (
+            !isGuideIndex && !Astro.props.noindex && (
                 <section class="reading">
                     <h2>Recommended reading</h2>
                     <p>Books that go deeper on the topics in this guide.</p>
@@ -265,6 +269,10 @@ const jsonLd = isArticle
             <a href="/">Behavior Tree Editor</a> ·
             <a href="https://old.behaviortrees.com">Classic editor</a> ·
             <a href="https://github.com/behaviortrees/behaviortrees">GitHub</a>
+        </p>
+        <p>
+            For AI agents: <a href="/llms.txt">llms.txt</a>
+            {isArticle && !isDraft && <> · <a href={canonical.replace(/\/$/, '.md')}>this guide as Markdown</a></>}
         </p>
         <p>© {new Date().getFullYear()} behaviortrees.com. Editor based on the MIT-licensed behavior3editor.</p>
     </footer>

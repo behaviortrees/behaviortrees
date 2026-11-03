@@ -2,10 +2,21 @@
   "installCommand": "pnpm install",
   "buildCommand": "pnpm exec turbo run build --filter=@behaviortrees/editor --filter=@behaviortrees/site && cp -R ../site/dist/. dist/",
   "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/:route(editor|projects|settings|admin|pricing|privacy|changelog)/", "destination": "/:route", "permanent": true },
+    { "source": "/sitemap.xml", "destination": "/sitemap-index.xml", "permanent": true }
+  ],
+  "headers": [
+    { "source": "/learn/:slug.md", "headers": [{ "key": "Content-Type", "value": "text/markdown; charset=utf-8" }] },
+    { "source": "/llms.txt", "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }] }
+  ],
   "rewrites": [
     { "source": "/ingest/static/:path(.*)", "destination": "https://us-assets.i.posthog.com/static/:path*" },
     { "source": "/ingest/:path(.*)", "destination": "https://us.i.posthog.com/:path*" },
     { "source": "/api/projects/:id", "destination": "/api/projects/[id]?id=:id" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/pricing", "destination": "/pricing.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/changelog", "destination": "/changelog.html" },
+    { "source": "/:route(editor|projects|settings|admin)", "destination": "/app.html" }
   ]
 }

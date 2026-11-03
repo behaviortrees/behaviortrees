@@ -20,14 +20,18 @@ import { customNodesToB3, projectToB3, treeToB3 } from '../../lib/behavior/b3';
 import { BtcppIssue, nodesToBtcpp, projectToBtcpp, treeToBtcpp } from '../../lib/behavior/btcpp';
 import { track } from '../../lib/analytics';
 import { recordActivation } from '../../lib/product-metrics';
+import { shareLinkFor } from '../../lib/share-link';
 import { toast } from 'sonner';
-import { CheckIcon, DownloadIcon, ClipboardIcon, ChevronDownIcon } from 'lucide-react';
+import { CheckIcon, DownloadIcon, ClipboardIcon, ChevronDownIcon, LinkIcon } from 'lucide-react';
 
 export type ExportType = 'project' | 'tree' | 'nodes';
 
 type ExportFormat = 'json' | 'compact' | 'btcpp_v4' | 'btcpp_v3';
 
 const isXml = (format: ExportFormat) => format === 'btcpp_v4' || format === 'btcpp_v3';
+
+// Chat apps and some browsers truncate URLs past a few tens of thousands of characters
+const LONG_LINK = 30_000;
 
 const ISSUE_COLOR: Record<BtcppIssue['level'], string> = {
 	error: 'text-danger',
@@ -109,6 +113,28 @@ const ExportModal: React.FC<ExportModalProps> = ({
 			setExportData(`Error generating export data: ${error}`);
 		}
 	}, [project, selectedTreeId, type, format]);
+
+	// A link that opens this tree or project in the editor (always behavior3 JSON)
+	const handleCopyLink = async () => {
+		if (!project) return;
+		try {
+			const tree = selectedTreeId ? project.trees[selectedTreeId] : undefined;
+			if (type === 'tree' && !tree) return;
+			const data = type === 'tree' ? treeToB3(tree!, project, true) : projectToB3(project);
+			const link = await shareLinkFor(data);
+			await navigator.clipboard.writeText(link);
+			track('export', { type, format, method: 'link' });
+			recordActivation(project, 'export');
+			if (link.length > LONG_LINK) {
+				toast.warning('Link copied, but it is long: some apps may cut it off. Download the file to be safe.');
+			} else {
+				toast.success('Link copied: it opens this ' + (type === 'tree' ? 'tree' : 'project') + ' in the editor');
+			}
+		} catch (error) {
+			console.error('Error copying link:', error);
+			toast.error('Failed to copy link');
+		}
+	};
 
 	// Handle copy to clipboard
 	const handleCopy = async () => {
@@ -253,6 +279,12 @@ const ExportModal: React.FC<ExportModalProps> = ({
 							{copied ? <CheckIcon className="h-4 w-4" /> : <ClipboardIcon className="h-4 w-4" />}
 							{copied ? 'Copied' : 'Copy'}
 						</Button>
+						{type !== 'nodes' && (
+							<Button variant="secondary" onClick={handleCopyLink} className="gap-2">
+								<LinkIcon className="h-4 w-4" />
+								Copy link
+							</Button>
+						)}
 					</div>
 					<div className="flex gap-2">
 						<Button onClick={handleDownload} className="gap-2">

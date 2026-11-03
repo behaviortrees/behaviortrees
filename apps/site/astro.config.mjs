@@ -44,8 +44,8 @@ export default defineConfig({
     integrations: [
         sitemap({
             filter: (page) => !draftUrls.has(page),
-            // The editor app lives at / outside this Astro build
-            customPages: [`${SITE}/`],
+            // The editor app's public pages live outside this Astro build
+            customPages: [`${SITE}/`, `${SITE}/pricing`, `${SITE}/changelog`],
         }),
     ],
     build: {

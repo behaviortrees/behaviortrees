@@ -1,36 +1,9 @@
 ---
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { guides as posts, sections } from '../../lib/guides.js';
 
-// Drafts build (so they can be previewed at their URL) but stay unlisted
-// here and out of the sitemap until draft: true is removed.
-const posts = Object.values(
-    import.meta.glob('./*.md', { eager: true })
-)
-    .filter((post) => !post.frontmatter.draft)
-    .sort((a, b) => (a.frontmatter.order ?? 99) - (b.frontmatter.order ?? 99));
-
-const sections = [
-    {
-        title: 'Foundations',
-        description: 'Start with the mental model and the building blocks.',
-        posts: posts.filter((post) => post.frontmatter.order <= 4),
-    },
-    {
-        title: 'Tools & platforms',
-        description: 'Choose an approach for the engine or runtime you use.',
-        posts: posts.filter(
-            (post) => post.frontmatter.order > 4 && post.frontmatter.order <= 10
-        ),
-    },
-    {
-        title: 'Practice & production',
-        description: 'Build, debug, and scale trees that hold up in real projects.',
-        posts: posts.filter((post) => post.frontmatter.order > 10),
-    },
-].filter((section) => section.posts.length);
-
-const postNumber = new Map(posts.map((post, index) => [post.url, index + 1]));
-const guideId = (post) => `guide-${post.url.split('/').filter(Boolean).at(-1)}`;
+const postNumber = new Map(posts.map((post, index) => [post.path, index + 1]));
+const guideId = (post) => `guide-${post.path.split('/').filter(Boolean).at(-1)}`;
 ---
 
 <ArticleLayout
@@ -80,11 +53,11 @@ const guideId = (post) => `guide-${post.url.split('/').filter(Boolean).at(-1)}`;
                             <p>{section.description}</p>
                         </div>
                         <ol class="guide-cards">
-                            {section.posts.map((post) => (
+                            {section.guides.map((post) => (
                                 <li id={guideId(post)}>
-                                    <a href={post.url}>
+                                    <a href={post.path}>
                                         <span class="guide-number">
-                                            {String(postNumber.get(post.url)).padStart(2, '0')}
+                                            {String(postNumber.get(post.path)).padStart(2, '0')}
                                         </span>
                                         <span class="guide-copy">
                                             <span class="guide-title">{post.frontmatter.title}</span>

@@ -8,6 +8,7 @@ import CloudSyncController from './components/auth/cloud-sync-controller.tsx';
 import { initAnalytics, markReloadingForNewDeploy } from './lib/analytics';
 import { CLERK_PUBLISHABLE_KEY, CLOUD_ENABLED } from './lib/auth';
 import { initWhatsNew } from './lib/changelog';
+import { takeSharedTreeFromUrl } from './lib/share-link';
 
 // A tab opened before a deploy asks for page chunks the new deploy no longer
 // has. Reload once to pick up the new build; if that already happened in the
@@ -25,6 +26,7 @@ window.addEventListener('vite:preloadError', (event) => {
 	window.location.reload();
 });
 
+takeSharedTreeFromUrl();
 initAnalytics();
 // Before render, so a project created by this visit doesn't count as returning
 initWhatsNew();

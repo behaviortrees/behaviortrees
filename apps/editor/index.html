@@ -23,6 +23,15 @@
 				}
 			})();
 		</script>
+		<!-- Build-time HTML for crawlers and agents (scripts/prerender.mjs); React
+		     replaces it, so browsers running scripts never show it. -->
+		<style>
+			@media (scripting: enabled) {
+				[data-prerender] {
+					display: none;
+				}
+			}
+		</style>
 		<link rel="preload" as="font" type="font/woff2" href="/fonts/inter-latin.woff2" crossorigin />
 
 		<title>Behavior Tree Editor - Free Online Visual Editor for Game AI</title>

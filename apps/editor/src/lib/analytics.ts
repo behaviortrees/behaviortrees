@@ -9,6 +9,7 @@ export type ProjectOrigin =
   | 'import'
   | 'example'
   | 'guide_example'
+  | 'shared_link'
   | 'restored'
   | 'unknown';
 
@@ -81,6 +82,8 @@ export type AnalyticsEventMap = {
     failure_category: 'validation' | 'network' | 'server' | 'unknown';
   };
   example_loaded: { example: string };
+  shared_link_opened: { kind: 'tree' | 'project'; encoding: 'json' | 'deflate' };
+  shared_link_failed: Record<string, never>;
   home_preview_clicked: { example: string };
   home_cta_clicked: { cta: 'create_project' | 'continue_project' | 'guides' };
   tree_created: Record<string, never>;
@@ -97,7 +100,7 @@ export type AnalyticsEventMap = {
   export: {
     type: 'project' | 'tree' | 'nodes';
     format: 'json' | 'compact' | 'btcpp_v4' | 'btcpp_v3';
-    method: 'copy' | 'download';
+    method: 'copy' | 'download' | 'link';
   };
   custom_node_created: { category: string };
   whats_new_shown: { release: string };
@@ -116,6 +119,17 @@ function debugEnabled(): boolean {
 let enabled = false;
 // Set once main.tsx starts reloading for a new deploy (see vite:preloadError)
 let reloadingForNewDeploy = false;
+
+// A tree opened from a link rides in the URL fragment (lib/share-link.ts).
+// It's cleared before analytics starts, but a link pasted into an open tab
+// can reach a pageview first; tree contents never belong in events.
+function dropSharedTrees(event: CaptureResult | null): CaptureResult | null {
+  const url = event?.properties?.$current_url;
+  if (typeof url === 'string' && url.includes('#tree=')) {
+    event!.properties.$current_url = url.slice(0, url.indexOf('#tree='));
+  }
+  return event;
+}
 
 // Exceptions that are never bugs, kept out of error tracking
 function dropNoiseExceptions(event: CaptureResult | null): CaptureResult | null {
@@ -152,7 +166,7 @@ export function initAnalytics(): void {
       // land here too. Stack traces resolve via the source maps vite.config.ts
       // uploads on production builds.
       capture_exceptions: true,
-      before_send: dropNoiseExceptions,
+      before_send: [dropSharedTrees, dropNoiseExceptions],
       disable_surveys: false,
       session_recording: {
         maskAllInputs: true,

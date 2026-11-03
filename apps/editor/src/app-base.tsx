@@ -4,7 +4,7 @@ import { useProjectStore } from './stores/useProjectStore';
 import { useTheme } from './lib/theme';
 import { Toaster } from 'sonner';
 import AppLayout from './components/layouts/app-layout';
-import ExampleLoader from './components/example-loader';
+import DeepLinkLoader from './components/deep-link-loader';
 import HomePage from './pages/home/home-page';
 import ProductAnalyticsTracker from './components/analytics/product-analytics-tracker';
 import WhatsNewNotice from './components/whats-new-notice';
@@ -36,7 +36,7 @@ function App() {
 	return (
 		<BrowserRouter>
 			<Toaster position="bottom-right" theme={resolved} />
-			<ExampleLoader />
+			<DeepLinkLoader />
 			<ProductAnalyticsTracker />
 			<WhatsNewNotice />
 			<AppLayout>

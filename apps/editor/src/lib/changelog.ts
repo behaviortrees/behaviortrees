@@ -15,6 +15,26 @@ export type ChangelogEntry = {
 // one-time "what's new" notice for returning users.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-03',
+    date: '2026-11-03',
+    title: 'Share a tree with a link',
+    summary: 'Send someone a tree they can open, explore and edit, without either of you signing up.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Export → Copy link makes a link to the current tree or the whole project. Anyone who opens it gets the tree in their own editor.',
+      },
+      {
+        kind: 'new',
+        text: 'The tree travels inside the link itself, so nothing is uploaded. Opened links land in a Shared trees project, separate from your own projects.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Mistyped addresses now show a not-found page instead of quietly opening the editor.',
+      },
+    ],
+  },
+  {
     id: '2026-10-18',
     date: '2026-10-18',
     title: 'Move whole branches and see run order',

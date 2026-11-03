@@ -64,6 +64,7 @@ src/
 - Custom node types for different behavior tree node categories
 - Zustand handles state with immer middleware for immutable updates
 - ShadCN UI components for consistent design
+- Routing on Vercel is explicit (`vercel.json`): every unknown path returns a real 404 (the Astro 404 page), so a new React Router route must also be added to the `vercel.json` rewrites. App-only routes rewrite to `app.html` (the empty shell). Public pages (`/`, `/pricing`, `/changelog`, `/privacy`) are prerendered at build time by `scripts/prerender.mjs` from `src/prerender.tsx` into their own `.html` files so crawlers and AI agents get content without JavaScript; a `(scripting: enabled)` media query in `index.html` hides that markup in browsers, where React renders the real page. Prerendered page components must render in Node (no browser globals during render).
 - Code splitting: every page except home is `React.lazy` in `app-base.tsx`, and the home demo's React Flow canvas (`components/home/tree-preview-canvas.tsx`) is lazy too. Keep `reactflow` and editor imports out of modules that home or the app shell load eagerly. `main.tsx` reloads once on `vite:preloadError` (stale chunks after a deploy).
 
 ### File Formats
@@ -71,6 +72,7 @@ src/
 - `lib/behavior/b3.ts` — behavior3 JSON. The persistence format: localStorage, cloud sync and project files all go through `projectToB3` / `parseImportedJson`. Node `ports` ride along in `custom_nodes`.
 - `lib/behavior/btcpp.ts` — BehaviorTree.CPP XML (v3 and v4: Groot2, ROS 2 Nav2). Import/export only, through the import and export dialogs and the projects page. It uses `DOMParser`, so `b3.ts` and the save path must never import it; its tests need `// @vitest-environment jsdom`.
 - `lib/behavior/btcpp-catalog.ts` — BT.CPP builtins with ports (from the BT.CPP headers), v3/v4 name maps, Nav2 node categories, and the behavior3 → BT.CPP export translation.
+- `lib/share-link.ts` — tree links: `/editor#tree=<payload>`, the payload URL-encoded behavior3 JSON or base64url zlib-deflated JSON (the export dialog's "Copy link"). `components/deep-link-loader.tsx` opens them in a stable "Shared trees" project, alongside `?example=` links. `main.tsx` strips the fragment before analytics starts, and analytics' `before_send` drops it from `$current_url`. The format is documented for agents in `apps/site/src/pages/llms.txt.js`; keep the two in sync.
 - Imported BT.CPP trees keep BT.CPP node names; behavior3 defaults are translated only on export. Attribute values stay strings.
 - `pnpm check:btcpp` (needs Docker) loads the editor's exports of Nav2's trees and the examples with the real BT.CPP v4 (ROS 2 Jazzy) and v3.8 (Humble); see `scripts/btcpp-check/run.sh`. CI runs it on PRs touching the BT.CPP code.
 

@@ -12,5 +12,8 @@
     "@astrojs/markdown-satteri": "^0.4.4",
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.4.0"
+  },
+  "devDependencies": {
+    "@behaviortrees/examples": "workspace:*"
   }
 }
