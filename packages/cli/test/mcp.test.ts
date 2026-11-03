@@ -31,6 +31,9 @@ describe('MCP server', () => {
 			'validate_tree',
 		]);
 		expect(client.getInstructions()).toContain('create_editor_link');
+		for (const tool of tools) {
+			expect(tool.annotations).toMatchObject({ title: tool.title, readOnlyHint: true });
+		}
 	});
 
 	it('validates a tree passed as an object or a string', async () => {

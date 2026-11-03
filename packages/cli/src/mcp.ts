@@ -29,6 +29,8 @@ const failure = (error: unknown) => ({
 
 export function createMcpServer(): McpServer {
 	const server = new McpServer({ name: 'behaviortrees', title: 'Behavior Trees', version: VERSION }, { instructions: INSTRUCTIONS });
+	// Directories (Claude's connector review) read the title from annotations, so
+	// each tool repeats it there
 	const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
 
 	server.registerTool(
@@ -37,7 +39,7 @@ export function createMcpServer(): McpServer {
 			title: 'Validate a behavior tree',
 			description: `Checks a behavior tree for errors: missing or dangling children, nodes with two parents, cycles, decorators with more than one child, leaves with children, unknown node names, and BehaviorTree.CPP import problems. Returns valid (true when there are no errors), the trees found, and findings at error, warning or info level.`,
 			inputSchema: { tree: treeInput },
-			annotations: readOnly,
+			annotations: { ...readOnly, title: 'Validate a behavior tree' },
 		},
 		async ({ tree }) => text(await validateTree(tree)),
 	);
@@ -48,7 +50,7 @@ export function createMcpServer(): McpServer {
 			title: 'Open a tree in the editor',
 			description: `Returns a url that opens the tree in the behaviortrees.com editor in the user's browser, auto-laid-out and editable, with no account needed. The tree travels inside the link (the URL fragment), so nothing is uploaded or stored. Fails with the validation errors if the tree has any.`,
 			inputSchema: { tree: treeInput },
-			annotations: readOnly,
+			annotations: { ...readOnly, title: 'Open a tree in the editor' },
 		},
 		async ({ tree }) => {
 			try {
@@ -69,7 +71,7 @@ export function createMcpServer(): McpServer {
 				tree: treeInput,
 				to: z.enum(CONVERT_TARGETS as [string, ...string[]]).describe('Target format: behavior3, btcpp-v4 or btcpp-v3'),
 			},
-			annotations: readOnly,
+			annotations: { ...readOnly, title: 'Convert a behavior tree' },
 		},
 		async ({ tree, to }) => {
 			try {
@@ -91,7 +93,7 @@ export function createMcpServer(): McpServer {
 			description:
 				'The built-in behavior3 nodes a tree can use without declaring them: composites (Sequence, Priority = selector/fallback, MemSequence, MemPriority), decorators (Inverter, Repeater, MaxTime, ...) and leaves (Wait, Succeeder, Failer, ...), with descriptions and default properties.',
 			inputSchema: {},
-			annotations: readOnly,
+			annotations: { ...readOnly, title: 'List built-in node types' },
 		},
 		async () => text(listNodeTypes()),
 	);
@@ -103,7 +105,7 @@ export function createMcpServer(): McpServer {
 			description:
 				'Complete, working example trees (enemy patrol, cooldown-gated attacks, robot navigation with recovery, and more) to learn the format from or start with. Without an id, lists the examples; with an id, returns that tree as behavior3 JSON.',
 			inputSchema: { id: z.string().optional().describe('Example id from the list; omit to list them') },
-			annotations: readOnly,
+			annotations: { ...readOnly, title: 'Get an example tree' },
 		},
 		async ({ id }) => {
 			if (!id) return text(listExamples());
@@ -119,7 +121,7 @@ export function createMcpServer(): McpServer {
 			description:
 				'Practical guides from behaviortrees.com/learn as Markdown: what behavior trees are, node types, blackboards, debugging, structuring large trees, and behavior trees in Unity, Unreal, Godot, Python and robotics (BehaviorTree.CPP, ROS 2, Nav2). Without a slug, lists the guides.',
 			inputSchema: { slug: z.string().optional().describe('Guide slug from the list; omit to list them') },
-			annotations: { ...readOnly, openWorldHint: true },
+			annotations: { ...readOnly, openWorldHint: true, title: 'Read a behavior tree guide' },
 		},
 		async ({ slug }) => {
 			try {
