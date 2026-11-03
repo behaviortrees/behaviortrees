@@ -17,11 +17,21 @@ const MINIMAL_TREE = {
     ],
 };
 
+// Keep in sync with packages/cli (README.md and src/mcp.ts)
+const TOOLS = [
+    '## MCP server and CLI',
+    '',
+    `- MCP server (Streamable HTTP, public, no auth): ${SITE}/mcp. Tools: validate_tree, create_editor_link, convert_tree, list_node_types, get_example, read_guide. Typical flow: write a behavior3 tree, validate_tree, fix errors, then create_editor_link and give the user the link.`,
+    '- Local MCP server over stdio: `npx -y behaviortrees mcp`',
+    '- CLI: `npx behaviortrees validate tree.json`, `npx behaviortrees convert tree.json --to btcpp-v4`, `npx behaviortrees link tree.json`. Reads behavior3 JSON or BehaviorTree.CPP XML; `--json` for machine-readable output.',
+    '- [npm package and docs](https://www.npmjs.com/package/behaviortrees)',
+];
+
 // Keep in sync with apps/editor/src/lib/share-link.ts
 const SHARE_LINKS = [
     '## Open a tree in the editor from a link',
     '',
-    `To give someone a behavior tree they can see and edit, link to ${SITE}/editor#tree=<payload>. It opens in a "Shared trees" project in their browser, with no account needed. The payload stays in the URL fragment, so it is never sent to the server.`,
+    `To give someone a behavior tree they can see and edit, link to ${SITE}/editor#tree=<payload> (the create_editor_link tool and \`behaviortrees link\` build these for you). It opens in a "Shared trees" project in their browser, with no account needed. The payload stays in the URL fragment, so it is never sent to the server.`,
     '',
     'The payload is a behavior3 JSON tree (or a whole project file), in one of two encodings:',
     '',
@@ -61,6 +71,8 @@ const body = () => {
         'Each link opens the tree in the editor. The behavior3 JSON is at the linked .json URL.',
         '',
         ...examples.map((example) => `- [${example.title}](${example.url}): ${example.description} JSON: ${example.jsonUrl}`),
+        '',
+        ...TOOLS,
         '',
         ...SHARE_LINKS,
     ];

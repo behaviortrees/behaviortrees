@@ -1,0 +1,64 @@
+{
+  "name": "behaviortrees",
+  "version": "0.1.0",
+  "description": "Validate, convert and share behavior trees (behavior3 JSON, BehaviorTree.CPP XML) from the command line or any MCP client.",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://www.behaviortrees.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/behaviortrees/behaviortrees.git",
+    "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/behaviortrees/behaviortrees/issues",
+  "keywords": [
+    "behavior-tree",
+    "behavior3",
+    "behaviortree-cpp",
+    "groot",
+    "ros2",
+    "nav2",
+    "game-ai",
+    "mcp",
+    "cli"
+  ],
+  "mcpName": "io.github.behaviortrees/behaviortrees",
+  "type": "module",
+  "bin": {
+    "behaviortrees": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp.d.ts",
+      "default": "./dist/mcp.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "lint": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@xmldom/xmldom": "^0.9.12",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@behaviortrees/examples": "workspace:*",
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.1",
+    "typescript": "~5.7.3",
+    "uuid": "^11.1.1",
+    "vitest": "^4.1.12"
+  }
+}
