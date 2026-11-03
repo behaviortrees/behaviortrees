@@ -9,6 +9,7 @@ pnpm + Turborepo monorepo:
 - `apps/editor` — next-gen React editor (`@behaviortrees/editor`): React 19, TypeScript, Vite, React Flow, Tailwind 4, Zustand. See its CLAUDE.md.
 - `apps/editor-classic` — classic AngularJS 1.4 + gulp 3 editor. **Not a workspace member**: it has its own npm `package-lock.json`. Never run pnpm inside it. See its CLAUDE.md.
 - `apps/site` — Astro guides site (`@behaviortrees/site`), served at /learn.
+- `packages/cli` — the `behaviortrees` npm package: CLI, library and MCP server (validate, convert, editor links). Bundles the editor's tree code from `apps/editor/src/lib` with esbuild. Also served as the public MCP server at `/mcp` (`apps/editor/api/mcp.ts`). See its CLAUDE.md.
 - `packages/examples` — shared example trees (`@behaviortrees/examples`), JSON in `trees/`. Single source of truth for both editors.
 
 ## Commands (repo root)

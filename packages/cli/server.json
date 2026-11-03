@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.behaviortrees/behaviortrees",
+  "title": "Behavior Trees",
+  "description": "Validate, convert (behavior3 JSON, BehaviorTree.CPP XML) and open behavior trees in a visual editor",
+  "websiteUrl": "https://www.behaviortrees.com",
+  "repository": {
+    "url": "https://github.com/behaviortrees/behaviortrees",
+    "source": "github",
+    "subfolder": "packages/cli"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "behaviortrees",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "packageArguments": [{ "type": "positional", "value": "mcp" }]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://www.behaviortrees.com/mcp"
+    }
+  ]
+}
