@@ -72,6 +72,7 @@ src/
 - `lib/behavior/b3.ts` — behavior3 JSON. The persistence format: localStorage, cloud sync and project files all go through `projectToB3` / `parseImportedJson`. Node `ports` ride along in `custom_nodes`.
 - `lib/behavior/btcpp.ts` — BehaviorTree.CPP XML (v3 and v4: Groot2, ROS 2 Nav2). Import/export only, through the import and export dialogs and the projects page. It uses `DOMParser`, so `b3.ts` and the save path must never import it; its tests need `// @vitest-environment jsdom`.
 - `lib/behavior/btcpp-catalog.ts` — BT.CPP builtins with ports (from the BT.CPP headers), v3/v4 name maps, Nav2 node categories, and the behavior3 → BT.CPP export translation.
+- `lib/share-link.ts` — tree links: `/editor#tree=<payload>`, the payload URL-encoded behavior3 JSON or base64url zlib-deflated JSON (the export dialog's "Copy link"). `components/deep-link-loader.tsx` opens them in a stable "Shared trees" project, alongside `?example=` links. `main.tsx` strips the fragment before analytics starts, and analytics' `before_send` drops it from `$current_url`. The format is documented for agents in `apps/site/src/pages/llms.txt.js`; keep the two in sync.
 - Imported BT.CPP trees keep BT.CPP node names; behavior3 defaults are translated only on export. Attribute values stay strings.
 - `pnpm check:btcpp` (needs Docker) loads the editor's exports of Nav2's trees and the examples with the real BT.CPP v4 (ROS 2 Jazzy) and v3.8 (Humble); see `scripts/btcpp-check/run.sh`. CI runs it on PRs touching the BT.CPP code.
 
