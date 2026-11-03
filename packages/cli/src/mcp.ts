@@ -8,9 +8,9 @@ import { SITE } from './core/site';
 import { validateTree } from './core/validate';
 import { VERSION } from './version';
 
-const INSTRUCTIONS = `Tools for behavior trees (game AI and robotics) from ${SITE}, a free online visual behavior tree editor.
+const INSTRUCTIONS = `Tools for behavior trees (game AI and robotics) from ${SITE}, a visual behavior tree editor.
 
-Typical flow when a user wants a behavior tree: write it as behavior3 JSON, check it with validate_tree, fix any errors, then call create_editor_link and give the user the link. It opens the tree in the editor in their browser, laid out and editable, with no account needed. convert_tree turns behavior3 JSON into BehaviorTree.CPP XML (Groot2, ROS 2 Nav2) and back. list_node_types shows the built-in nodes; get_example returns complete example trees to copy from; read_guide explains concepts.`;
+Typical flow when a user wants a behavior tree: write it as behavior3 JSON, check it with validate_tree, fix any errors, then create_editor_link returns a link that opens the tree in the editor in their browser, laid out and editable, with no account needed. convert_tree turns behavior3 JSON into BehaviorTree.CPP XML (Groot2, ROS 2 Nav2) and back. list_node_types shows the built-in nodes; get_example returns complete example trees to copy from; read_guide explains concepts.`;
 
 const TREE_FORMAT = `behavior3 JSON: {"title": "...", "root": "<id of the first node under the root>", "nodes": {"<id>": {"name": "<node type>", "title": "<optional label>", "children": ["<id>", ...] (composites, in run order) or "child": "<id>" (decorators), "properties": {...}}}, "custom_nodes": [{"name": "IsEnemyVisible", "category": "condition"}]}. Positions ("display") are optional. Any node name that isn't built in (see list_node_types) must be declared in custom_nodes with a category of action, condition, composite or decorator. A whole project ({"trees": [...], "custom_nodes": [...]}) or BehaviorTree.CPP XML also works.`;
 
@@ -35,7 +35,7 @@ export function createMcpServer(): McpServer {
 		'validate_tree',
 		{
 			title: 'Validate a behavior tree',
-			description: `Check a behavior tree for errors before using it: missing or dangling children, nodes with two parents, cycles, decorators with more than one child, leaves with children, unknown node names, and BehaviorTree.CPP import problems. Returns valid (true when there are no errors), the trees found, and findings at error, warning or info level.`,
+			description: `Checks a behavior tree for errors: missing or dangling children, nodes with two parents, cycles, decorators with more than one child, leaves with children, unknown node names, and BehaviorTree.CPP import problems. Returns valid (true when there are no errors), the trees found, and findings at error, warning or info level.`,
 			inputSchema: { tree: treeInput },
 			annotations: readOnly,
 		},
@@ -46,7 +46,7 @@ export function createMcpServer(): McpServer {
 		'create_editor_link',
 		{
 			title: 'Open a tree in the editor',
-			description: `Make a link that opens the tree in the behaviortrees.com editor in the user's browser, auto-laid-out and editable, with no account needed. The tree travels inside the link (the URL fragment), so nothing is uploaded or stored. The tree must validate without errors. Give the user the returned url.`,
+			description: `Returns a url that opens the tree in the behaviortrees.com editor in the user's browser, auto-laid-out and editable, with no account needed. The tree travels inside the link (the URL fragment), so nothing is uploaded or stored. Fails with the validation errors if the tree has any.`,
 			inputSchema: { tree: treeInput },
 			annotations: readOnly,
 		},

@@ -1,0 +1,34 @@
+# After each production deploy, tell IndexNow search engines (Bing, which
+# ChatGPT search relies on, plus Yandex, Seznam and Naver) about every page in
+# the sitemap, so new and changed pages are recrawled within hours.
+# The key is public by design: IndexNow verifies it via the file at keyLocation
+# (apps/editor/public/4b1d144f793b0b34736170d41e0bb42a.txt).
+name: IndexNow
+
+on:
+  deployment_status:
+
+jobs:
+  ping:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production' &&
+      github.event.deployment.creator.login == 'vercel[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HOST: www.behaviortrees.com
+      KEY: 4b1d144f793b0b34736170d41e0bb42a
+    steps:
+      - name: Submit sitemap URLs
+        run: |
+          set -euo pipefail
+          urls=$(curl -sf "https://$HOST/sitemap-0.xml" | grep -o '<loc>[^<]*' | sed 's/<loc>//' | jq -R . | jq -sc .)
+          echo "Submitting $(echo "$urls" | jq length) URLs"
+          body=$(jq -nc --arg host "$HOST" --arg key "$KEY" --argjson urls "$urls" \
+            '{host: $host, key: $key, keyLocation: "https://\($host)/\($key).txt", urlList: $urls}')
+          status=$(curl -s -o response.txt -w '%{http_code}' -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' -d "$body")
+          echo "IndexNow responded $status"; cat response.txt
+          # 200 and 202 mean accepted; anything else (403 bad key, 422 URL/host mismatch, 429) fails the run
+          [ "$status" = 200 ] || [ "$status" = 202 ]

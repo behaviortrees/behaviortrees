@@ -2,6 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createMcpServer } from './mcp';
 
+const DOCS_URL = 'https://github.com/behaviortrees/behaviortrees/tree/main/packages/cli#readme';
+
 const CORS = {
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -17,6 +19,11 @@ export async function handleMcpRequest(req: IncomingMessage & { body?: unknown }
 
 	if (req.method === 'OPTIONS') {
 		res.writeHead(204).end();
+		return;
+	}
+	// A person following the server URL from a directory gets the docs
+	if (req.method === 'GET' && String(req.headers.accept ?? '').includes('text/html')) {
+		res.writeHead(302, { Location: DOCS_URL }).end();
 		return;
 	}
 	if (req.method !== 'POST') {
