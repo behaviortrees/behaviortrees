@@ -3,6 +3,7 @@ import { NodeProps, useReactFlow } from 'reactflow';
 import { GitFork, PenLine, Trash2 } from 'lucide-react';
 import { descendantIds } from '../../lib/behavior/organize';
 import { useProjectStore } from '../../stores/useProjectStore';
+import { promptDialog } from '../../lib/dialogs';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -29,12 +30,16 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ node, children }) => 
     }
   };
 
-  const handleRename = () => {
-    if (selectedTreeId) {
-      const newTitle = prompt('Enter new title:', node.data.label);
-      if (newTitle) {
-        updateBlock(selectedTreeId, node.id, { title: newTitle });
-      }
+  const handleRename = async () => {
+    if (!selectedTreeId) return;
+    const newTitle = await promptDialog({
+      title: 'Rename block',
+      label: 'Title',
+      defaultValue: node.data.label,
+      submitLabel: 'Rename',
+    });
+    if (newTitle) {
+      updateBlock(selectedTreeId, node.id, { title: newTitle });
     }
   };
 

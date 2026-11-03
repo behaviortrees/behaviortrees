@@ -15,6 +15,7 @@ import { track } from '../../lib/analytics';
 import { trackImportError } from '../../lib/import-tracking';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { Button } from '../../components/ui/button';
+import { confirmDialog } from '../../lib/dialogs';
 import { ArrowRight, Plus, Download, Trash, FolderOpen, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -331,8 +332,13 @@ const ProjectsPage: React.FC = () => {
                     size="sm"
                     title="Delete project"
                     className="text-danger-soft hover:bg-danger/10"
-                    onClick={() => {
-                      if (!confirm(`Delete project "${item.name}"?`)) return;
+                    onClick={async () => {
+                      const ok = await confirmDialog({
+                        title: `Delete project "${item.name}"?`,
+                        confirmLabel: 'Delete project',
+                        destructive: true,
+                      });
+                      if (!ok) return;
                       removeLocalProject(item.id);
                       if (project?.id === item.id) {
                         closeProject();

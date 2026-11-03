@@ -13,6 +13,7 @@ import {
 	NODE_CATEGORIES,
 } from '../../lib/node-categories';
 import NodeEditModal from '../modals/node-edit-modal';
+import { confirmDialog } from '../../lib/dialogs';
 
 /**
  * Tracks whether a horizontally scrollable strip has content off either edge,
@@ -95,10 +96,14 @@ const NodesPanel: React.FC = () => {
 		setModalOpen(true);
 	};
 
-	const handleDeleteNode = (node: Node) => {
-		if (!confirm(`Delete node "${node.name}"? Blocks using it stay in trees but lose their template.`)) {
-			return;
-		}
+	const handleDeleteNode = async (node: Node) => {
+		const ok = await confirmDialog({
+			title: `Delete node "${node.name}"?`,
+			description: 'Blocks using it stay in trees but lose their template.',
+			confirmLabel: 'Delete node',
+			destructive: true,
+		});
+		if (!ok) return;
 		deleteNode(node.name);
 		toast.success(`Node "${node.name}" deleted`);
 	};
