@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { decodeSharedTree } from '../../../apps/editor/src/lib/share-link';
 import { EXAMPLE_TREES, getExample, listNodeTypes } from '../src/core/catalog';
 import { convertTree } from '../src/core/convert';
+import { stripAffiliateTags } from '../src/core/guides';
 import { createEditorLink, InvalidTreeError } from '../src/core/link';
 import { validateTree } from '../src/core/validate';
 
@@ -155,5 +156,12 @@ describe('listNodeTypes', () => {
 		const names = listNodeTypes().map((node) => node.name);
 		expect(names).toEqual(expect.arrayContaining(['Sequence', 'Priority', 'Inverter', 'Wait']));
 		expect(names).not.toContain('Root');
+	});
+});
+
+describe('stripAffiliateTags', () => {
+	it('removes Amazon affiliate tags from guide links and leaves other links alone', () => {
+		const md = '[AI for Games](https://www.amazon.com/dp/1138483974?tag=behaviortrees-20) and [editor](https://www.behaviortrees.com/?tag=x)';
+		expect(stripAffiliateTags(md)).toBe('[AI for Games](https://www.amazon.com/dp/1138483974) and [editor](https://www.behaviortrees.com/?tag=x)');
 	});
 });
