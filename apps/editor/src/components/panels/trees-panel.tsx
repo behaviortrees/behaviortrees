@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Import, Pencil, Plus, Trash2, Workflow } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { track } from '../../lib/analytics';
+import { confirmDialog, promptDialog } from '../../lib/dialogs';
 import ImportModal from '../modals/import-modal';
 
 const TreesPanel: React.FC = () => {
@@ -24,18 +25,27 @@ const TreesPanel: React.FC = () => {
     );
   }
 
-  const handleCreateTree = () => {
-    const title = prompt('Enter tree name:');
+  const handleCreateTree = async () => {
+    const title = await promptDialog({
+      title: 'New tree',
+      label: 'Name',
+      placeholder: 'Patrol',
+      submitLabel: 'Create tree',
+    });
     if (title) {
       createTree(title);
       track('tree_created');
     }
   };
 
-  const handleDeleteTree = (treeId: string) => {
-    if (confirm('Are you sure you want to delete this tree?')) {
-      deleteTree(treeId);
-    }
+  const handleDeleteTree = async (treeId: string) => {
+    const ok = await confirmDialog({
+      title: `Delete "${project.trees[treeId]?.title}"?`,
+      description: 'The tree and all of its blocks will be removed. You can undo this.',
+      confirmLabel: 'Delete tree',
+      destructive: true,
+    });
+    if (ok) deleteTree(treeId);
   };
 
   const startRename = (treeId: string, currentTitle: string) => {
