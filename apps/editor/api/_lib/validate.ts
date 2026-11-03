@@ -4,17 +4,15 @@ import { z } from 'zod';
 // JSON opaquely, so this only guards the fields sync depends on plus the
 // overall shape — full semantic validation stays client-side (parseImportedJson).
 
-const b3ProjectSchema = z
-  .object({
-    id: z.string().min(1),
-    name: z.string().min(1),
-    scope: z.literal('project'),
-    trees: z.array(z.object({}).passthrough()),
-    updatedAt: z
-      .string()
-      .refine((value) => !Number.isNaN(Date.parse(value)), 'invalid timestamp'),
-  })
-  .passthrough();
+const b3ProjectSchema = z.looseObject({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  scope: z.literal('project'),
+  trees: z.array(z.looseObject({})),
+  updatedAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), 'invalid timestamp'),
+});
 
 export type ValidatedProject = z.infer<typeof b3ProjectSchema>;
 

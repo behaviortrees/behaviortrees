@@ -1,6 +1,6 @@
 {
   "name": "behaviortrees",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Validate, convert and share behavior trees (behavior3 JSON, BehaviorTree.CPP XML) from the command line or any MCP client.",
   "license": "AGPL-3.0-only",
   "homepage": "https://www.behaviortrees.com",
@@ -53,7 +53,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@xmldom/xmldom": "^0.9.12",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@behaviortrees/examples": "workspace:*",
