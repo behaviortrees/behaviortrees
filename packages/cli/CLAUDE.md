@@ -9,7 +9,10 @@
 - `src/core/catalog.ts` imports each example tree explicitly; a test fails if one in `packages/examples/trees` is missing.
 - Guides are fetched live from `/learn/guides.json` and `/learn/<slug>.md` (Astro endpoints in `apps/site`). `BEHAVIORTREES_SITE` overrides the base URL.
 - The public MCP server is `apps/editor/api/mcp.ts`, rewritten from `/mcp` in `apps/editor/vercel.json`. The editor depends on this package, so Turborepo builds it first.
-- Publishing: bump `version` in both `package.json` and `server.json`, `pnpm build`, `npm publish`, then `mcp-publisher publish` (MCP Registry; `name` must match `mcpName`).
+- Publishing, from `main` with a clean tree:
+  1. Bump `version` in both `package.json` and `server.json`, merge, then `pnpm build && pnpm test`.
+  2. `pnpm publish --access public --otp=<code>`. Use pnpm, not npm: only pnpm rewrites the `workspace:*` devDependency. The npm account has 2FA, so the maintainer supplies the code.
+  3. `mcp-publisher login github --token "$(gh auth token)" && mcp-publisher publish`. The org namespace (`io.github.behaviortrees/*`) needs a token that can read org roles; the interactive `mcp-publisher login github` only grants the personal namespace. Registry logins expire within minutes, so chain the two. `name` must match `mcpName` in `package.json`.
 - The tool descriptions in `src/mcp.ts` are the model's only documentation; `llms.txt` (`apps/site/src/pages/llms.txt.js`) and `README.md` describe the same tools, so update all three together.
 
 Commands: `pnpm build`, `pnpm test`, `pnpm lint` (typecheck).
