@@ -17,6 +17,7 @@ const SettingsPage = lazy(() => import('./pages/settings/settings-page'));
 const AdminPage = lazy(() => import('./pages/admin/admin-page'));
 const PricingPage = lazy(() => import('./pages/pricing/pricing-page'));
 const PrivacyPage = lazy(() => import('./pages/privacy/privacy-page'));
+const TermsPage = lazy(() => import('./pages/terms/terms-page'));
 const ChangelogPage = lazy(() => import('./pages/changelog/changelog-page'));
 
 import './index.css';
@@ -48,6 +49,7 @@ function App() {
 						<Route path="/settings" element={<SettingsPage />} />
 						<Route path="/pricing" element={<PricingPage />} />
 						<Route path="/privacy" element={<PrivacyPage />} />
+						<Route path="/terms" element={<TermsPage />} />
 						<Route path="/changelog" element={<ChangelogPage />} />
 						<Route path="/admin" element={<AdminPage />} />
 					</Routes>

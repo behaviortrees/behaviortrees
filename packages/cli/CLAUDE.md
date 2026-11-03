@@ -16,3 +16,5 @@
 - The tool descriptions in `src/mcp.ts` are the model's only documentation; `llms.txt` (`apps/site/src/pages/llms.txt.js`) and `README.md` describe the same tools, so update all three together.
 
 Commands: `pnpm build`, `pnpm test`, `pnpm lint` (typecheck).
+
+ChatGPT app: `chatgpt/` holds the OpenAI plugin package (`plugin.json`, `mcp.json`, `assets/`), including the review test cases. `pnpm chatgpt:zip` writes `chatgpt/dist/behaviortrees-chatgpt-<version>.zip` for upload on the OpenAI Platform; its version must match `package.json`. Domain verification is served at `/.well-known/openai-apps-challenge` from the `OPENAI_APPS_CHALLENGE` Vercel environment variable (`apps/editor/api/openai-apps-challenge.ts`). MCP tool changes don't need a new zip: deploy, then Rescan in the portal.

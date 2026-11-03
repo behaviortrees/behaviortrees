@@ -48,7 +48,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "vitest run",
-    "lint": "tsc --noEmit -p tsconfig.json"
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "chatgpt:zip": "node chatgpt/build.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
