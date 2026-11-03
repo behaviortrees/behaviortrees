@@ -271,16 +271,17 @@ const BehaviorTreeEditor: React.FC = () => {
   // cache and needs the viewport refit to the new tree's blocks
   const lastTreeIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (selectedTreeId === lastTreeIdRef.current) return;
+    // Wait for the instance before recording the tree as fitted: on first
+    // load it arrives after the tree, and the mount-time fitView alone stops
+    // at its minZoom, leaving tall trees (like ones opened from links) cut off
+    if (!reactFlowInstance || selectedTreeId === lastTreeIdRef.current) return;
     lastTreeIdRef.current = selectedTreeId;
     prevNodePositionsRef.current = {};
-    if (reactFlowInstance) {
-      // Wait for the synced nodes to render before fitting
-      const id = window.setTimeout(() => {
-        reactFlowInstance.fitView({ padding: 0.15, maxZoom: 1 });
-      }, 50);
-      return () => window.clearTimeout(id);
-    }
+    // Wait for the synced nodes to render before fitting
+    const id = window.setTimeout(() => {
+      reactFlowInstance.fitView({ padding: 0.15, maxZoom: 1 });
+    }, 50);
+    return () => window.clearTimeout(id);
   }, [selectedTreeId, reactFlowInstance]);
 
   // Handle node selection

@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, NodeProps, Position } from 'reactflow';
+import { displayTitle } from '../../../lib/behavior/display-title';
 import { cn } from '../../../lib/utils';
 import NodeContextMenu from '../node-context-menu';
 
@@ -7,6 +8,7 @@ export type BaseNodeProps = NodeProps & {
   data: {
     label: string;
     category: string;
+    properties?: Record<string, unknown>;
     showSourceHandle?: boolean;
     showTargetHandle?: boolean;
     handleClassName?: string;
@@ -27,6 +29,7 @@ const BaseNode: React.FC<BaseNodeProps> = (props) => {
 
   const {
     label,
+    properties,
     showSourceHandle = true,
     showTargetHandle = true,
     handleClassName = 'bg-slate-500',
@@ -55,7 +58,7 @@ const BaseNode: React.FC<BaseNodeProps> = (props) => {
       <div className={cn(`p-3 min-w-[100px] flex items-center`, contentClassName)}>
         {icon && <div className="mr-2">{icon}</div>}
         <div className="text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap">
-          {label}
+          {displayTitle(label, properties)}
         </div>
       </div>
       
