@@ -1,0 +1,20 @@
+---
+// One node of the 404 page's tree, with its children
+const { node } = Astro.props;
+---
+
+<li>
+    <div class="nf-node" data-id={node.id} data-cat={node.cat} data-status={node.untouched ? 'idle' : 'failure'}>
+        <span class="nf-kind">{node.kind}</span>
+        <span class="nf-title">{node.title}<i class="nf-dot" aria-hidden="true"></i></span>
+    </div>
+    {
+        node.children && (
+            <ul>
+                {node.children.map((child) => (
+                    <Astro.self node={child} />
+                ))}
+            </ul>
+        )
+    }
+</li>

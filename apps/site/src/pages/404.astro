@@ -1,17 +1,359 @@
 ---
+import NotFoundTreeNode from '../components/NotFoundTreeNode.astro';
 import ArticleLayout from '../layouts/ArticleLayout.astro';
+
+const SITE = 'https://www.behaviortrees.com';
+
+// The tree that went looking for the page. Rendered in its final state (every
+// branch failed) so it reads without JavaScript; the script replays the tick.
+const tree = {
+    id: 'root', kind: 'Root', cat: 'root', title: 'Serve the page',
+    children: [
+        {
+            id: 'sel', kind: 'Selector', cat: 'composite', title: 'Find the page',
+            children: [
+                {
+                    id: 'seq', kind: 'Sequence', cat: 'composite', title: 'Follow the link',
+                    children: [
+                        { id: 'exists', kind: 'Condition', cat: 'condition', title: 'Does the page exist?' },
+                        { id: 'show', kind: 'Action', cat: 'action', title: 'Show the page', untouched: true },
+                    ],
+                },
+                {
+                    id: 'retry', kind: 'Retry ×3', cat: 'decorator', title: 'Look again, harder',
+                    children: [{ id: 'squint', kind: 'Action', cat: 'action', title: 'Squint at the URL' }],
+                },
+                { id: 'couch', kind: 'Condition', cat: 'condition', title: 'Is it under the couch?' },
+                { id: 'blame', kind: 'Action', cat: 'action', title: 'Blame the blackboard' },
+            ],
+        },
+    ],
+};
 ---
 
 <ArticleLayout
     title="Page not found - behaviortrees.com"
-    description="This page doesn't exist."
+    description="This page doesn't exist. Every branch of the tree failed."
+    variant="guide-index"
     noindex
 >
-    <h1>Page not found</h1>
-    <p>There's nothing at this address. Try one of these instead:</p>
-    <ul>
-        <li><a href="https://www.behaviortrees.com/">Behavior Tree Editor</a></li>
-        <li><a href="https://www.behaviortrees.com/learn/">Behavior tree guides</a></li>
-        <li><a href="https://www.behaviortrees.com/llms.txt">llms.txt</a>, an index of the site for AI agents</li>
-    </ul>
+    <section class="learn-hero nf">
+        <div class="nf-grid">
+            <div class="nf-copy">
+                <p class="eyebrow">Error 404 <span aria-hidden="true">/</span> Selector exhausted</p>
+                <h1>Page not found. <span>Every branch failed.</span></h1>
+                <p class="learn-intro">
+                    We ticked a tree to find the page you asked for. It tried everything a behavior tree
+                    knows how to try, and nothing returned Success. A well-built tree always ends in a
+                    fallback, so here's ours:
+                </p>
+                <div class="nf-fallback" aria-label="Fallback">
+                    <span class="nf-fallback-kind">Fallback</span>
+                    <a class="start-guide" href={`${SITE}/editor`}>Open the editor <span aria-hidden="true">→</span></a>
+                    <a class="nf-link" href={`${SITE}/learn/`}>Read the guides</a>
+                    <a class="nf-link" href={`${SITE}/`}>Go home</a>
+                </div>
+            </div>
+
+            <figure class="nf-figure">
+                <ul class="nf-tree" aria-label="The behavior tree that looked for this page">
+                    <NotFoundTreeNode node={tree} />
+                </ul>
+                <figcaption>
+                    <span id="nf-caption" aria-live="polite">Tick 1: every branch returned Failure, so the tree gave up.</span>
+                    <button type="button" id="nf-tick" class="nf-tick">Tick again</button>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
 </ArticleLayout>
+
+<script is:inline>
+    (function () {
+        var STEP_MS = 330;
+        // Evaluation order: composites go active, leaves fail, failure bubbles up
+        var STEPS = [
+            ['root', 'active'], ['sel', 'active'], ['seq', 'active'],
+            ['exists', 'failure'], ['seq', 'failure'],
+            ['retry', 'active', 'Retry 1/3'], ['squint', 'failure'], ['squint', 'idle'],
+            ['retry', 'active', 'Retry 2/3'], ['squint', 'failure'], ['squint', 'idle'],
+            ['retry', 'active', 'Retry 3/3'], ['squint', 'failure'], ['retry', 'failure', 'Retry ×3'],
+            ['couch', 'failure'], ['blame', 'failure'],
+            ['sel', 'failure'], ['root', 'failure'],
+        ];
+        var CAPTIONS = [
+            'Every branch returned Failure, so the tree gave up.',
+            'Still Failure. Behavior trees are deterministic; ticking harder won’t help.',
+            'The Retry decorator would like it noted that it tried. Three times.',
+            'The blackboard has an alibi.',
+            'This is the part where a real tree runs its fallback. Ours is the links on this page.',
+        ];
+        var tick = 1;
+        var running = false;
+        var nodes = {};
+        document.querySelectorAll('.nf-node').forEach(function (el) {
+            nodes[el.dataset.id] = el;
+        });
+        var caption = document.getElementById('nf-caption');
+        var button = document.getElementById('nf-tick');
+        if (!caption || !button) return;
+
+        var setStatus = function (id, status, kind) {
+            var el = nodes[id];
+            if (!el) return;
+            el.dataset.status = status;
+            if (kind) el.querySelector('.nf-kind').textContent = kind;
+        };
+        var captionFor = function (n) {
+            var text = CAPTIONS[Math.min(n, CAPTIONS.length) - 1];
+            return 'Tick ' + n + ': ' + (n > CAPTIONS.length ? 'Failure. The page remains unfound.' : text);
+        };
+
+        var play = function () {
+            if (running) return;
+            running = true;
+            button.disabled = true;
+            Object.keys(nodes).forEach(function (id) {
+                setStatus(id, 'idle');
+            });
+            caption.textContent = 'Tick ' + tick + ': looking…';
+            STEPS.forEach(function (step, i) {
+                setTimeout(function () {
+                    setStatus(step[0], step[1], step[2]);
+                }, (i + 1) * STEP_MS);
+            });
+            setTimeout(function () {
+                caption.textContent = captionFor(tick);
+                running = false;
+                button.disabled = false;
+            }, (STEPS.length + 1) * STEP_MS);
+        };
+
+        button.addEventListener('click', function () {
+            tick += 1;
+            play();
+        });
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) play();
+    })();
+</script>
+
+<style is:global>
+    .nf {
+        --nf-cat-root: #9184d9;
+        --nf-cat-composite: #7f9cc4;
+        --nf-cat-decorator: #a08ac0;
+        --nf-cat-action: #79ad9a;
+        --nf-cat-condition: #c0a678;
+        --nf-failure: #d97b83;
+        --nf-raised: #272a38;
+        --nf-edge: #595d6c;
+    }
+    .learn-hero.nf::after {
+        display: none;
+    }
+    [data-theme='light'] .nf {
+        --nf-failure: #a8474f;
+        --nf-raised: #ffffff;
+        --nf-edge: #9397ab;
+    }
+
+    .nf-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+        gap: clamp(2.5rem, 6vw, 5rem);
+        align-items: center;
+    }
+    article .nf h1 {
+        margin-bottom: 1.5rem;
+        font-size: clamp(40px, 5.2vw, 64px);
+        font-weight: 520;
+        line-height: 1;
+        letter-spacing: -0.045em;
+    }
+    .nf-fallback {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1.5rem;
+        margin-top: 2rem;
+    }
+    .nf-fallback-kind {
+        flex-basis: 100%;
+        color: var(--faint);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .nf-fallback .start-guide {
+        margin-top: 0;
+    }
+    article .nf-link {
+        color: var(--mut);
+        font-size: 13px;
+    }
+    article .nf-link:hover {
+        color: var(--acc-soft);
+    }
+
+    .nf-figure {
+        margin: 0;
+    }
+    .nf-tree,
+    .nf-tree ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .nf-tree ul {
+        padding-left: 1.4rem;
+    }
+    .nf-tree li {
+        position: relative;
+        margin: 0;
+        padding-top: 0.45rem;
+    }
+    .nf-tree ul > li::before,
+    .nf-tree ul > li::after {
+        content: '';
+        position: absolute;
+        left: -0.8rem;
+        border-color: var(--nf-edge);
+        border-style: solid;
+        border-width: 0;
+    }
+    .nf-tree ul > li::before {
+        top: 1.75rem;
+        width: 0.8rem;
+        border-top-width: 1px;
+    }
+    .nf-tree ul > li::after {
+        top: 0;
+        bottom: 0;
+        border-left-width: 1px;
+    }
+    .nf-tree ul > li:last-child::after {
+        bottom: auto;
+        height: 1.75rem;
+    }
+
+    .nf-node {
+        display: inline-block;
+        min-width: 12.5rem;
+        padding: 0.35rem 0.75rem;
+        border: 1px solid var(--brd);
+        border-left: 3px solid var(--nf-cat);
+        border-radius: 6px;
+        background: var(--nf-raised);
+        line-height: 1.35;
+        transition:
+            border-color 0.2s,
+            box-shadow 0.2s,
+            opacity 0.2s;
+    }
+    .nf-node[data-cat='root'] { --nf-cat: var(--nf-cat-root); }
+    .nf-node[data-cat='composite'] { --nf-cat: var(--nf-cat-composite); }
+    .nf-node[data-cat='decorator'] { --nf-cat: var(--nf-cat-decorator); }
+    .nf-node[data-cat='action'] { --nf-cat: var(--nf-cat-action); }
+    .nf-node[data-cat='condition'] { --nf-cat: var(--nf-cat-condition); }
+
+    .nf-kind {
+        display: block;
+        color: var(--faint);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .nf-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        color: var(--bt-text);
+        font-size: 13px;
+        white-space: nowrap;
+    }
+    .nf-dot {
+        width: 8px;
+        height: 8px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: transparent;
+        transition: background 0.2s;
+    }
+
+    .nf-node[data-status='idle'] {
+        opacity: 0.55;
+    }
+    .nf-node[data-status='active'],
+    .nf-node[data-status='failure'] {
+        --nf-status: var(--bt-accent);
+        border-top-color: var(--nf-status);
+        border-right-color: var(--nf-status);
+        border-bottom-color: var(--nf-status);
+        box-shadow:
+            0 0 0 1px var(--nf-status),
+            0 0 14px color-mix(in srgb, var(--nf-status) 35%, transparent);
+    }
+    .nf-node[data-status='failure'] {
+        --nf-status: var(--nf-failure);
+    }
+    .nf-node[data-status='active'] .nf-dot,
+    .nf-node[data-status='failure'] .nf-dot {
+        background: var(--nf-status);
+    }
+
+    .nf-figure figcaption {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem 1rem;
+        margin-top: 1.5rem;
+        color: var(--mut);
+        font-size: 13px;
+    }
+    #nf-caption {
+        flex: 1 1 14rem;
+        min-height: 2.6em;
+    }
+    .nf-tick {
+        padding: 0.4rem 0.8rem;
+        border: 1px solid var(--brd);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--bt-text);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+        transition:
+            border-color 0.15s,
+            opacity 0.15s;
+    }
+    .nf-tick:hover:not(:disabled) {
+        border-color: var(--bt-accent);
+    }
+    .nf-tick:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+    @media (scripting: none) {
+        .nf-tick {
+            display: none;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .nf-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 600px) {
+        .nf-node {
+            min-width: 0;
+        }
+    }
+</style>
