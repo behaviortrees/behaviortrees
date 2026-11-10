@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from './_lib/http.js';
 import { upsertCommercialInterest } from './_lib/db.js';
 import { validateCommercialInterest } from './_lib/interest-validate.js';
+import { notifyCommercialInterest } from './_lib/notify.js';
 
 const MAX_REQUEST_BYTES = 8 * 1024;
 const RATE_LIMIT = 5;
@@ -60,7 +61,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await upsertCommercialInterest(validated.interest);
+    const { isNew } = await upsertCommercialInterest(validated.interest);
+    await notifyCommercialInterest(validated.interest, isNew);
     res.status(200).json({ received: true });
   } catch (error) {
     console.error('Failed to store commercial interest', error);
