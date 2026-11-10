@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
 	Dialog,
 	DialogContent,
@@ -16,6 +16,7 @@ import {
 } from '../ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { useProjectStore } from '../../stores/useProjectStore';
+import type { Project } from '../../types';
 import { customNodesToB3, projectToB3, treeToB3 } from '../../lib/behavior/b3';
 import { BtcppIssue, nodesToBtcpp, projectToBtcpp, treeToBtcpp } from '../../lib/behavior/btcpp';
 import { track } from '../../lib/analytics';
@@ -39,6 +40,47 @@ const ISSUE_COLOR: Record<BtcppIssue['level'], string> = {
 	info: 'text-muted',
 };
 
+const NO_EXPORT: { text: string; issues: BtcppIssue[] } = { text: '', issues: [] };
+
+function buildExport(
+	project: Project | null,
+	selectedTreeId: string | undefined,
+	type: ExportType,
+	format: ExportFormat,
+): { text: string; issues: BtcppIssue[] } {
+	if (!project) return { text: 'No project loaded', issues: [] };
+	const tree = selectedTreeId ? project.trees[selectedTreeId] : undefined;
+	if (type === 'tree' && !tree) return { text: 'No tree selected', issues: [] };
+
+	try {
+		if (isXml(format)) {
+			const options = { version: format === 'btcpp_v3' ? 3 : 4 } as const;
+			const result =
+				type === 'project'
+					? projectToBtcpp(project, options)
+					: type === 'tree'
+						? treeToBtcpp(project, selectedTreeId!, options)
+						: nodesToBtcpp(project, options);
+			return { text: result.xml, issues: result.issues };
+		}
+
+		const data =
+			type === 'project'
+				? projectToB3(project)
+				: type === 'tree'
+					? // Standalone tree files carry the project's custom nodes
+						treeToB3(tree!, project, true)
+					: customNodesToB3(project);
+		return {
+			text: format === 'json' ? JSON.stringify(data, null, 2) : JSON.stringify(data),
+			issues: [],
+		};
+	} catch (error) {
+		console.error('Error generating export data:', error);
+		return { text: `Error generating export data: ${error}`, issues: [] };
+	}
+}
+
 interface ExportModalProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -51,68 +93,25 @@ const ExportModal: React.FC<ExportModalProps> = ({
 	exportType = 'project',
 }) => {
 	const [type, setType] = useState<ExportType>(exportType);
+	const [wasOpen, setWasOpen] = useState(open);
 
 	// The dialog stays mounted, so take the requested type each time it opens
-	useEffect(() => {
+	if (open !== wasOpen) {
+		setWasOpen(open);
 		if (open) setType(exportType);
-	}, [open, exportType]);
+	}
 	const [format, setFormat] = useState<ExportFormat>('json');
-	const [issues, setIssues] = useState<BtcppIssue[]>([]);
 	const [copied, setCopied] = useState(false);
 	const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
 	const project = useProjectStore((state) => state.project);
 	const selectedTreeId = useProjectStore((state) => state.project?.selectedTreeId);
 
-	const [exportData, setExportData] = useState<string>('');
-
-	// Generate export data based on type and format
-	useEffect(() => {
-		if (!project) {
-			setExportData('No project loaded');
-			return;
-		}
-
-		let data: unknown;
-		setIssues([]);
-
-		try {
-			if (isXml(format)) {
-				const options = { version: format === 'btcpp_v3' ? 3 : 4 } as const;
-				if (type === 'tree' && (!selectedTreeId || !project.trees[selectedTreeId])) {
-					setExportData('No tree selected');
-					return;
-				}
-				const result =
-					type === 'project'
-						? projectToBtcpp(project, options)
-						: type === 'tree'
-							? treeToBtcpp(project, selectedTreeId!, options)
-							: nodesToBtcpp(project, options);
-				setExportData(result.xml);
-				setIssues(result.issues);
-				return;
-			}
-
-			if (type === 'project') {
-				data = projectToB3(project);
-			} else if (type === 'tree') {
-				if (!selectedTreeId || !project.trees[selectedTreeId]) {
-					setExportData('No tree selected');
-					return;
-				}
-				// Standalone tree files carry the project's custom nodes
-				data = treeToB3(project.trees[selectedTreeId], project, true);
-			} else if (type === 'nodes') {
-				data = customNodesToB3(project);
-			}
-
-			setExportData(format === 'json' ? JSON.stringify(data, null, 2) : JSON.stringify(data));
-		} catch (error) {
-			console.error('Error generating export data:', error);
-			setExportData(`Error generating export data: ${error}`);
-		}
-	}, [project, selectedTreeId, type, format]);
+	// Only while open: the dialog stays mounted through every edit
+	const { text: exportData, issues } = useMemo(
+		() => (open ? buildExport(project, selectedTreeId, type, format) : NO_EXPORT),
+		[open, project, selectedTreeId, type, format],
+	);
 
 	// A link that opens this tree or project in the editor (always behavior3 JSON)
 	const handleCopyLink = async () => {

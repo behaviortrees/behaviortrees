@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -54,13 +54,20 @@ const InterestDialog: React.FC<InterestDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => {
-    if (open && initialEmail) setEmail(initialEmail);
-    if (open) {
-      setError(null);
-      setSubmitted(false);
-    }
-  }, [open, initialEmail, plan]);
+  // Fresh status each time it opens, or the plan or email it opens for changes
+  const [seededFor, setSeededFor] = useState<{ plan: CommercialPlan; initialEmail: string } | null>(
+    null
+  );
+  if (!open && seededFor) setSeededFor(null);
+  if (
+    open &&
+    (!seededFor || seededFor.plan !== plan || seededFor.initialEmail !== initialEmail)
+  ) {
+    setSeededFor({ plan, initialEmail });
+    if (initialEmail) setEmail(initialEmail);
+    setError(null);
+    setSubmitted(false);
+  }
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

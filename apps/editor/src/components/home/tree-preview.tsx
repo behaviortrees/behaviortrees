@@ -79,7 +79,7 @@ const prefersReducedMotion = () => {
 };
 
 export const TreePreview: React.FC = () => {
-	const { tree, ticks, isLeaf } = useMemo(buildPreview, []);
+	const { tree, ticks, isLeaf } = useMemo(() => buildPreview(), []);
 	const [reducedMotion] = useState(prefersReducedMotion);
 	const [playing, setPlaying] = useState(!reducedMotion);
 	const [frame, setFrame] = useState(0);

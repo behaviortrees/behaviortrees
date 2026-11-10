@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { getThemePreference, setThemePreference, type ThemePreference } from '../../lib/theme';
@@ -36,20 +36,9 @@ const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label }) => (
 
 const SettingsPage: React.FC = () => {
   const project = useProjectStore(state => state.project);
-  const [theme, setTheme] = useState<string>('system');
-  const [autoSave, setAutoSave] = useState<boolean>(false);
-  const [showGrid, setShowGrid] = useState<boolean>(true);
-
-  // Load settings from localStorage on component mount
-  useEffect(() => {
-    const savedTheme = getThemePreference();
-    const savedAutoSave = localStorage.getItem('bt-auto-save') === 'true';
-    const savedShowGrid = localStorage.getItem('bt-show-grid') !== 'false'; // Default to true
-
-    setTheme(savedTheme);
-    setAutoSave(savedAutoSave);
-    setShowGrid(savedShowGrid);
-  }, []);
+  const [theme, setTheme] = useState<string>(() => getThemePreference());
+  const [autoSave, setAutoSave] = useState(() => localStorage.getItem('bt-auto-save') === 'true');
+  const [showGrid, setShowGrid] = useState(() => localStorage.getItem('bt-show-grid') !== 'false');
 
   const themeOptions: ThemeOption[] = [
     { id: 'light', name: 'Light' },
