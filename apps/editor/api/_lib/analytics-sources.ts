@@ -62,6 +62,7 @@ const TRACKED_EVENTS = [
   'cloud_sync_started',
   'cloud_sync_succeeded',
   'cloud_sync_failed',
+  'auth_unavailable',
   'project_became_substantial',
   'activation_completed',
   'pricing_viewed',

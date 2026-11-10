@@ -67,6 +67,7 @@ export type AnalyticsEventMap = {
     conflict_count: number;
   };
   cloud_sync_failed: { failure_category: 'offline' | 'api' | 'unknown' };
+  auth_unavailable: Record<string, never>;
   project_became_substantial: ProjectMetrics;
   activation_completed: ProjectMetrics & { trigger: 'save' | 'export' };
   pricing_viewed: { activated_before_view: boolean };
@@ -132,16 +133,24 @@ function dropSharedTrees(event: CaptureResult | null): CaptureResult | null {
 }
 
 // Exceptions that are never bugs, kept out of error tracking
-function dropNoiseExceptions(event: CaptureResult | null): CaptureResult | null {
+export function dropNoiseExceptions(event: CaptureResult | null): CaptureResult | null {
   if (event?.event !== '$exception') return event;
   // Cancelling vite:preloadError makes the stale chunk's import() resolve to
   // undefined, so React.lazy throws "reading 'default'" just before the reload
   // lands. Nothing thrown while the page is being replaced is real.
   if (reloadingForNewDeploy) return null;
+  const list = event.properties?.$exception_list as { value?: string }[] | undefined;
+  const matches = (test: (value: string) => boolean) =>
+    list?.some((e) => typeof e.value === 'string' && test(e.value)) ?? false;
   // The browser deferring resize notifications a frame (React Flow triggers
   // it). Harmless, and reported without a stack.
-  const list = event.properties?.$exception_list as { value?: string }[] | undefined;
-  if (list?.some((e) => e.value?.startsWith('ResizeObserver loop'))) return null;
+  if (matches((v) => v.startsWith('ResizeObserver loop'))) return null;
+  // An ad blocker or network blocking clerk-js. Clerk's loader rethrows it as
+  // an unhandled rejection we can't catch; the header shows sign-in as
+  // unavailable and tracks auth_unavailable instead.
+  if (matches((v) => v.includes('failed_to_load_clerk_js'))) return null;
+  // Microsoft's link scanner (Outlook Safe Links) driving the page.
+  if (matches((v) => v.includes('Object Not Found Matching Id:'))) return null;
   return event;
 }
 
