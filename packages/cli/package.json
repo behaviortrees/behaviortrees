@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@behaviortrees/examples": "workspace:*",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "esbuild": "^0.28.1",
     "typescript": "~5.7.3",
     "uuid": "^11.1.1",
