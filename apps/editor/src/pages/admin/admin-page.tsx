@@ -402,16 +402,20 @@ const CommercialInterestsCard: React.FC<{
           </thead>
           <tbody>
             {data.latest.map((row) => (
-              <tr key={`${row.email}-${row.plan}`} className="border-t border-divider">
+              <tr key={`${row.email}-${row.plan}`} className="border-t border-divider align-top">
                 <td className="py-1.5 pr-4">{row.email}</td>
                 <td className="py-1.5 pr-4 text-muted">{row.plan}</td>
                 <td className="py-1.5 pr-4 text-muted">{row.runtime}</td>
                 <td className="py-1.5 pr-4 text-muted">{row.usageMode}</td>
-                <td
-                  className="max-w-[260px] truncate py-1.5 pr-4 text-muted"
-                  title={row.obstacleDetail ?? row.obstacle}
-                >
-                  {row.obstacleDetail ?? row.obstacle}
+                <td className="min-w-[260px] py-1.5 pr-4 text-muted">
+                  {row.obstacleDetail ? (
+                    <>
+                      <div className="text-xs text-faint">{row.obstacle}</div>
+                      <div className="whitespace-pre-wrap break-words">{row.obstacleDetail}</div>
+                    </>
+                  ) : (
+                    row.obstacle
+                  )}
                 </td>
                 <td className="py-1.5 text-right text-faint whitespace-nowrap">
                   {new Date(row.createdAt).toLocaleDateString()}

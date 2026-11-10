@@ -120,9 +120,9 @@ export async function softDeleteProject(
 
 export async function upsertCommercialInterest(
   interest: ValidatedCommercialInterest
-): Promise<void> {
+): Promise<{ isNew: boolean }> {
   const email = interest.email.trim().toLowerCase();
-  await sql()`
+  const rows = await sql()`
     insert into commercial_interests (
       email_normalized,
       plan,
@@ -151,7 +151,9 @@ export async function upsertCommercialInterest(
           source_path = excluded.source_path,
           contact_consent = excluded.contact_consent,
           updated_at = now()
+    returning (xmax = 0) as inserted
   `;
+  return { isNew: rows[0]?.inserted === true };
 }
 
 export type CommercialInterestStats = {
