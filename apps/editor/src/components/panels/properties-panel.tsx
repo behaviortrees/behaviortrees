@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MousePointerClick, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjectStore } from '../../stores/useProjectStore';
@@ -28,9 +28,11 @@ const PropertyRow: React.FC<PropertyRowProps> = ({ name, value, textPorts, onCha
 	const [draft, setDraft] = useState(() => formatPropertyValue(value));
 
 	// Re-seed when the value changes underneath us (undo, switching nodes)
-	useEffect(() => {
+	const [seededValue, setSeededValue] = useState(value);
+	if (!Object.is(value, seededValue)) {
+		setSeededValue(value);
 		setDraft(formatPropertyValue(value));
-	}, [value]);
+	}
 
 	const commit = () => {
 		const next = keepsText(value, textPorts) ? draft : inferPropertyValue(draft);

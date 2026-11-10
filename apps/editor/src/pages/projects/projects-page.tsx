@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project } from '../../types';
 import { useProjectStore } from '../../stores/useProjectStore';
@@ -33,10 +33,13 @@ const ProjectsPage: React.FC = () => {
   const [renameValue, setRenameValue] = useState('');
   
   // Load projects from local storage; re-read when cloud sync changes it
-  const [projects, setProjects] = useState<Project[]>([]);
   const localRevision = useSyncStore(state => state.localRevision);
+  // Bumped after this page renames or deletes a stored project
+  const [listRevision, setListRevision] = useState(0);
 
-  useEffect(() => {
+  const projects = useMemo<Project[]>(() => {
+    void localRevision;
+    void listRevision;
     const loadedProjects = [];
     for (const raw of listLocalProjects()) {
       try {
@@ -50,12 +53,8 @@ const ProjectsPage: React.FC = () => {
     }
 
     // If no projects in localStorage but we have a current project, use that
-    if (loadedProjects.length === 0 && project) {
-      setProjects([project]);
-    } else {
-      setProjects(loadedProjects);
-    }
-  }, [project, localRevision]);
+    return loadedProjects.length === 0 && project ? [project] : loadedProjects;
+  }, [project, localRevision, listRevision]);
 
   const handleCreateProject = () => {
     if (projectName.trim() === '') return;
@@ -103,7 +102,7 @@ const ProjectsPage: React.FC = () => {
         return;
       }
     }
-    setProjects(prev => prev.map(p => (p.id === target.id ? { ...p, name } : p)));
+    setListRevision(r => r + 1);
     toast.success('Project renamed');
   };
 
@@ -343,7 +342,7 @@ const ProjectsPage: React.FC = () => {
                       if (project?.id === item.id) {
                         closeProject();
                       }
-                      setProjects(prev => prev.filter(p => p.id !== item.id));
+                      setListRevision(r => r + 1);
                       toast.success('Project deleted');
                     }}
                   >

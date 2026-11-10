@@ -60,7 +60,7 @@ const NodesPanel: React.FC = () => {
 	const [editingNode, setEditingNode] = useState<Node | null>(null);
 	const project = useProjectStore((state) => state.project);
 	const deleteNode = useProjectStore((state) => state.deleteNode);
-	const tabs = useOverflowArrows();
+	const { ref: tabsRef, edges: tabEdges, scrollBy: scrollTabs } = useOverflowArrows();
 
 	if (!project) {
 		return <div className="p-4 text-center text-faint">No project loaded</div>;
@@ -130,7 +130,7 @@ const NodesPanel: React.FC = () => {
 				    a bare scroll region gives no hint there's more. */}
 				<div className="relative mx-3 mt-3 rounded-md bg-inset">
 					<TabsList
-						ref={tabs.ref}
+						ref={tabsRef}
 						className="no-scrollbar flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-md border-transparent bg-transparent p-1"
 					>
 						{visibleCategories.map((category) => (
@@ -144,21 +144,21 @@ const NodesPanel: React.FC = () => {
 						))}
 					</TabsList>
 
-					{tabs.edges.start && (
+					{tabEdges.start && (
 						<button
 							type="button"
 							aria-label="Scroll categories left"
-							onClick={() => tabs.scrollBy(-120)}
+							onClick={() => scrollTabs(-120)}
 							className="absolute inset-y-0 left-0 grid w-7 place-items-center rounded-l-md bg-gradient-to-r from-inset from-60% to-transparent text-muted hover:text-accent-soft"
 						>
 							<ChevronLeft size={14} />
 						</button>
 					)}
-					{tabs.edges.end && (
+					{tabEdges.end && (
 						<button
 							type="button"
 							aria-label="Scroll categories right"
-							onClick={() => tabs.scrollBy(120)}
+							onClick={() => scrollTabs(120)}
 							className="absolute inset-y-0 right-0 grid w-7 place-items-center rounded-r-md bg-gradient-to-l from-inset from-60% to-transparent text-muted hover:text-accent-soft"
 						>
 							<ChevronRight size={14} />

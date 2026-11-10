@@ -90,17 +90,10 @@ const BehaviorTreeEditor: React.FC = () => {
   const organize = useProjectStore(state => state.organize);
 
   // Get editor settings from localStorage
-  const [showGrid, setShowGrid] = useState<boolean>(true);
-  const [autoSave, setAutoSave] = useState<boolean>(false);
+  const [showGrid, setShowGrid] = useState(() => localStorage.getItem('bt-show-grid') !== 'false');
+  const [autoSave, setAutoSave] = useState(() => localStorage.getItem('bt-auto-save') === 'true');
 
-  // Load settings
   useEffect(() => {
-    const savedShowGrid = localStorage.getItem('bt-show-grid') !== 'false'; // Default to true
-    const savedAutoSave = localStorage.getItem('bt-auto-save') === 'true';
-
-    setShowGrid(savedShowGrid);
-    setAutoSave(savedAutoSave);
-
     // Listen for storage events to update settings in real-time
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'bt-show-grid') {

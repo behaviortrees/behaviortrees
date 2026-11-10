@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import BehaviorTreeEditor from '../../components/editor/behavior-tree-editor';
 import { useProjectStore } from '../../stores/useProjectStore';
 
@@ -13,18 +13,17 @@ const hasStoredProjects = (): boolean => {
 const EditorPage: React.FC = () => {
   const project = useProjectStore(state => state.project);
   const createProject = useProjectStore(state => state.createProject);
-  const [initialized, setInitialized] = useState(false);
+  const initialized = useRef(false);
 
   // First-ever visit gets a starter project; anyone who closed their
   // project on purpose gets the "No Project Open" screen instead
   useEffect(() => {
-    if (!project && !initialized) {
-      if (!hasStoredProjects()) {
-        createProject('Demo Project', 'A demo behavior tree project');
-      }
-      setInitialized(true);
+    if (project || initialized.current) return;
+    initialized.current = true;
+    if (!hasStoredProjects()) {
+      createProject('Demo Project', 'A demo behavior tree project');
     }
-  }, [project, initialized, createProject]);
+  }, [project, createProject]);
 
   // BehaviorTreeEditor renders the No Project Open screen when project is null
   return <BehaviorTreeEditor />;

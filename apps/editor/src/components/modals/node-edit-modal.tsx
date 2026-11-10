@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
 	Dialog,
 	DialogContent,
@@ -56,14 +56,23 @@ const NodeEditModal: React.FC<NodeEditModalProps> = ({
 	const [description, setDescription] = useState('');
 	const [rows, setRows] = useState<PropertyRow[]>([]);
 
-	useEffect(() => {
-		if (!open) return;
+	// Re-seed the form whenever it opens, or the node it edits changes
+	const [seededFor, setSeededFor] = useState<{
+		node: Node | null;
+		defaultCategory: NodeCategory;
+	} | null>(null);
+	if (!open && seededFor) setSeededFor(null);
+	if (
+		open &&
+		(!seededFor || seededFor.node !== node || seededFor.defaultCategory !== defaultCategory)
+	) {
+		setSeededFor({ node, defaultCategory });
 		setName(node?.name ?? '');
 		setCategory(node?.category ?? defaultCategory);
 		setTitle(node?.title ?? '');
 		setDescription(node?.description ?? '');
 		setRows(node ? toRows(node.properties) : []);
-	}, [open, node, defaultCategory]);
+	}
 
 	const handleSave = () => {
 		const trimmed = name.trim();

@@ -479,6 +479,12 @@ const LatestProjectsCard: React.FC<{ data: ProjectsSection | SectionError }> = (
   </div>
 );
 
+function describeLoadError(err: unknown): string {
+  if (err instanceof ApiError && err.status === 401) return 'Sign in as the admin to view this page.';
+  if (err instanceof ApiError && (err.status === 403 || err.status === 404)) return 'Not authorized.';
+  return err instanceof Error ? err.message : 'Failed to load dashboard';
+}
+
 // Split so Clerk hooks only run when the provider is mounted (CLOUD_ENABLED)
 const AdminDashboard: React.FC = () => {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -487,42 +493,32 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(
-    async (fresh: boolean) => {
-      setLoading(true);
-      setError(null);
-      try {
-        setData(await fetchAdminDashboard(fresh, () => getToken()));
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 401) {
-          setError('Sign in as the admin to view this page.');
-        } else if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
-          setError('Not authorized.');
-        } else {
-          setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
+    (fresh: boolean) =>
+      fetchAdminDashboard(fresh, () => getToken())
+        .then(
+          (next) => {
+            setData(next);
+            setError(null);
+          },
+          (err) => setError(describeLoadError(err))
+        )
+        .finally(() => setLoading(false)),
     [getToken]
   );
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      setError('Sign in as the admin to view this page.');
-      setLoading(false);
-      return;
-    }
-    load(false);
+    if (isLoaded && isSignedIn) void load(false);
   }, [isLoaded, isSignedIn, load]);
 
-  if (error) {
+  const shownError =
+    isLoaded && !isSignedIn ? 'Sign in as the admin to view this page.' : error;
+
+  if (shownError) {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="card text-center">
           <h2 className="text-xl font-medium mb-2">Admin</h2>
-          <p className="text-muted">{error}</p>
+          <p className="text-muted">{shownError}</p>
         </div>
       </div>
     );
@@ -561,7 +557,10 @@ const AdminDashboard: React.FC = () => {
           variant="outline"
           className="flex items-center gap-2"
           disabled={loading}
-          onClick={() => load(true)}
+          onClick={() => {
+            setLoading(true);
+            void load(true);
+          }}
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
         </Button>
