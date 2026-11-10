@@ -1,7 +1,30 @@
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { ClerkFailed, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { Cloud, CloudAlert, CloudOff, RefreshCw } from 'lucide-react';
+import { useEffect } from 'react';
+import { track } from '../../lib/analytics';
 import { useSyncStore } from '../../lib/storage/cloud-sync';
 import { Button } from '../ui/button';
+
+let authUnavailableTracked = false;
+
+const AuthUnavailable: React.FC = () => {
+  useEffect(() => {
+    if (authUnavailableTracked) return;
+    authUnavailableTracked = true;
+    track('auth_unavailable', {});
+  }, []);
+
+  const label =
+    'Sign-in is unavailable: your browser or network blocked it. ' +
+    'Projects still save on this device. Allow clerk.behaviortrees.com to sign in.';
+
+  return (
+    <span className="flex items-center gap-1.5 text-[13px] text-muted" title={label}>
+      <CloudOff size={14} />
+      Sign-in unavailable
+    </span>
+  );
+};
 
 const SyncIndicator: React.FC = () => {
   const status = useSyncStore((state) => state.status);
@@ -36,6 +59,9 @@ const SyncIndicator: React.FC = () => {
 // Only rendered when cloud features are enabled (inside ClerkProvider).
 const AuthControls: React.FC = () => (
   <div className="flex items-center gap-3">
+    <ClerkFailed>
+      <AuthUnavailable />
+    </ClerkFailed>
     <SignedOut>
       <SignInButton mode="modal">
         <Button
