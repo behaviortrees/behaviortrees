@@ -157,6 +157,48 @@ export type ProjectsSection = {
   }[];
 };
 
+export type RequestLogCoverage = { first: string | null; last: string | null; rows: number };
+
+export type AgentKind =
+  | 'assistant'
+  | 'ai_crawler'
+  | 'search'
+  | 'social'
+  | 'seo'
+  | 'bot'
+  | 'library'
+  | 'browser'
+  | 'unknown';
+
+export type AgentTotal = { name: string; kind: AgentKind; requests: number; errors: number };
+
+export type McpSection = {
+  coverage: RequestLogCoverage;
+  daily: { date: string; assistants: number; libraries: number; bots: number }[];
+  clients: AgentTotal[];
+  statuses: { status: number; count: number }[];
+};
+
+export type NpmSection = {
+  package: string;
+  total30d: number;
+  last7d: number;
+  daily: { date: string; downloads: number }[];
+};
+
+export type CrawlersSection = {
+  coverage: RequestLogCoverage;
+  daily: { date: string; browsers: number; search: number; ai: number; other: number }[];
+  agents: AgentTotal[];
+  browsers: number;
+};
+
+export type FailingRequestsSection = {
+  coverage: RequestLogCoverage;
+  top: { status: number; path: string; count: number; agents: number; lastSeen: string }[];
+  daily: { date: string; clientErrors: number; serverErrors: number }[];
+};
+
 export type AdminDashboardResponse = {
   generatedAt: string;
   cached: boolean;
@@ -166,6 +208,10 @@ export type AdminDashboardResponse = {
   errors: ErrorsSection | SectionError;
   projects: ProjectsSection | SectionError;
   interests: CommercialInterestsSection | SectionError;
+  mcp: McpSection | SectionError;
+  npm: NpmSection | SectionError;
+  crawlers: CrawlersSection | SectionError;
+  failing: FailingRequestsSection | SectionError;
 };
 
 // Takes its own token getter: the admin page fetches straight from Clerk's
