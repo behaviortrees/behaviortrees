@@ -95,7 +95,8 @@ export type AnalyticsEventMap = {
     source: 'paste' | 'file' | 'example';
     format: 'b3' | 'btcpp';
     reason: ImportFailureReason;
-    // The parser's message for invalid_xml, e.g. "1:27: unclosed tag: Sequence"
+    // invalid_xml: "line:column: parser message", e.g. "3:37: not well-formed".
+    // not_behavior_tree (BT.CPP): what the file had instead, e.g. "root element <svg>"
     detail?: string;
   };
   export: {

@@ -13,6 +13,7 @@ import {
 import { DEFAULT_NODES } from './defaults';
 import { InvalidFileError } from './import-error';
 import { childIdsInOrder, organizeTree, readTreeLayout, TreeLayout } from './organize';
+import { readParserError, tolerateBtcppXml } from './xml-input';
 
 // BehaviorTree.CPP XML (v3 and v4), the format of Groot2 and ROS 2 Nav2.
 // Kept apart from b3.ts on purpose: projects persist and sync as behavior3
@@ -104,20 +105,21 @@ function parseDocument(text: string): Element {
   if (/<!DOCTYPE/i.test(text)) {
     throw new InvalidFileError('XML files with a DOCTYPE are not supported', 'xml_doctype');
   }
-  const doc = new DOMParser().parseFromString(text.replace(/^\uFEFF/, ''), 'application/xml');
+  const doc = new DOMParser().parseFromString(tolerateBtcppXml(text), 'application/xml');
   const error = doc.getElementsByTagName('parsererror')[0];
   if (error) {
-    // Chrome and Safari prefix the message with a heading; Firefox puts the
-    // file location on the following lines
-    const detail = (error.textContent ?? '')
-      .replace(/^\s*This page contains the following errors:\s*/i, '')
-      .trim()
-      .split('\n')[0]
-      .slice(0, 160);
-    throw new InvalidFileError(`Not valid XML${detail ? `: ${detail}` : ''}`, 'invalid_xml', detail || undefined);
+    const { message, line, column } = readParserError(error);
+    const at = line !== undefined ? ` at line ${line}, column ${column}` : '';
+    const detail = (line !== undefined ? `${line}:${column}: ${message}` : message).slice(0, 160);
+    throw new InvalidFileError(`Not valid XML${at}${message ? `: ${message}` : ''}`, 'invalid_xml', detail || undefined);
   }
-  if (doc.documentElement.tagName !== 'root') {
-    throw new InvalidFileError('Not a BehaviorTree.CPP file: expected a <root> element', 'not_behavior_tree');
+  const rootTag = doc.documentElement.tagName;
+  if (rootTag !== 'root') {
+    throw new InvalidFileError(
+      'Not a BehaviorTree.CPP file: expected a <root> element',
+      'not_behavior_tree',
+      `root element <${rootTag.slice(0, 40)}>`
+    );
   }
   return doc.documentElement;
 }
@@ -192,7 +194,11 @@ export function parseBtcppXml(
 
   if (treeElements.length === 0) {
     if (Object.keys(models).length === 0) {
-      throw new InvalidFileError('This file has no <BehaviorTree> or <TreeNodesModel>', 'not_behavior_tree');
+      throw new InvalidFileError(
+        'This file has no <BehaviorTree> or <TreeNodesModel>',
+        'not_behavior_tree',
+        'no BehaviorTree or TreeNodesModel'
+      );
     }
     return { kind: 'nodes', version, models, issues };
   }

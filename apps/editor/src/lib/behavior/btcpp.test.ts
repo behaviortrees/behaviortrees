@@ -220,9 +220,55 @@ describe('bad input', () => {
     );
   });
 
-  it('keeps the parser message as the detail for invalid XML', () => {
-    expect(() => parseBtcppXml('<root><BehaviorTree ID="T">', DEFAULT_NODES, 'horizontal')).toThrow(
-      expect.objectContaining({ detail: expect.stringMatching(/unclosed tag: BehaviorTree/) })
+  it('reports where invalid XML breaks', () => {
+    expect(() => parseBtcppXml('<root>\n<BehaviorTree ID="T">', DEFAULT_NODES, 'horizontal')).toThrow(
+      expect.objectContaining({
+        message: 'Not valid XML at line 2, column 21: unclosed tag: BehaviorTree',
+        detail: '2:21: unclosed tag: BehaviorTree',
+      })
+    );
+  });
+
+  it.each([
+    ['<behavior_tree/>', 'root element <behavior_tree>'],
+    ['<root BTCPP_format="4"/>', 'no BehaviorTree or TreeNodesModel'],
+  ])('says what %s has instead of a tree', (xml, detail) => {
+    expect(() => parseBtcppXml(xml, DEFAULT_NODES, 'horizontal')).toThrow(expect.objectContaining({ detail }));
+  });
+});
+
+// tinyxml2, which BT.CPP parses with, accepts these; strict XML doesn't
+describe('XML that BT.CPP accepts', () => {
+  const attrs = (xml: string, name: string) => blockNamed(importTrees(xml).trees[0], name).properties;
+
+  it('reads a bare & and < in attribute values as written', () => {
+    const xml = `<root BTCPP_format="4"><BehaviorTree ID="T"><Sequence>
+      <Script code="ready := x < 3 && y > 1"/>
+      <AlwaysSuccess _skipIf="!ready && retries < 2" name='a & b'/>
+    </Sequence></BehaviorTree></root>`;
+    expect(attrs(xml, 'Script')).toMatchObject({ code: 'ready := x < 3 && y > 1' });
+    expect(attrs(xml, 'AlwaysSuccess')).toMatchObject({ _skipIf: '!ready && retries < 2' });
+  });
+
+  it('exports them escaped, so the tree re-imports unchanged', () => {
+    const project = fromXml(`<root BTCPP_format="4"><BehaviorTree ID="T">
+      <Script code="ok := a && b < 3"/>
+    </BehaviorTree></root>`);
+    const { exported, reimported } = roundTrip(project, 4);
+    expect(exported.xml).toContain('code="ok := a &amp;&amp; b &lt; 3"');
+    const [tree] = Object.values(reimported.trees);
+    expect(blockNamed(tree, 'Script').properties).toMatchObject({ code: 'ok := a && b < 3' });
+  });
+
+  it('reads a file with whitespace before the XML declaration', () => {
+    const xml = '\n\n  <?xml version="1.0" encoding="UTF-8"?>\n<root BTCPP_format="4"><BehaviorTree ID="T"><AlwaysSuccess/></BehaviorTree></root>';
+    expect(importTrees(xml).trees).toHaveLength(1);
+  });
+
+  it('still reports errors at their line after skipping that whitespace', () => {
+    const xml = '\n\n<?xml version="1.0"?>\n<root>\n<BehaviorTree ID="T">';
+    expect(() => parseBtcppXml(xml, DEFAULT_NODES, 'horizontal')).toThrow(
+      expect.objectContaining({ detail: expect.stringMatching(/^5:\d+: /) })
     );
   });
 });
