@@ -12,7 +12,7 @@ import {
 } from '../../lib/storage/local-projects';
 import { useSyncStore } from '../../lib/storage/cloud-sync';
 import { track } from '../../lib/analytics';
-import { trackImportError } from '../../lib/import-tracking';
+import { trackImportError, trackInvalidJson } from '../../lib/import-tracking';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { Button } from '../../components/ui/button';
 import { confirmDialog } from '../../lib/dialogs';
@@ -139,9 +139,9 @@ const ProjectsPage: React.FC = () => {
       let json: unknown;
       try {
         json = JSON.parse(text);
-      } catch {
+      } catch (error) {
         toast.error('Invalid behavior tree file');
-        track('import_failed', { source: 'file', format: 'b3', reason: 'invalid_json' });
+        trackInvalidJson(error, { source: 'file', format: 'b3' });
         return;
       }
 

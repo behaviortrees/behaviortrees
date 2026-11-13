@@ -8,6 +8,7 @@ import {
   b3ToProject,
   b3ToTree,
   customNodesToB3,
+  describeJsonShape,
   parseImportedJson,
   projectToB3,
   treeToB3,
@@ -172,10 +173,50 @@ describe('parseImportedJson', () => {
     expect(parseImportedJson(tree.custom_nodes!).kind).toBe('nodes');
   });
 
-  it.each([null, 'text', { title: 'not a tree' }])('rejects %j as not a behavior tree', (data) => {
+  it.each([
+    [null, 'top-level null'],
+    ['text', 'top-level string'],
+    [{ title: 'not a tree' }, '{title:string}'],
+  ])('rejects %j as not a behavior tree, outlining it', (data, detail) => {
     expect(() => parseImportedJson(data)).toThrow(
-      expect.objectContaining({ name: 'InvalidFileError', reason: 'not_behavior_tree' })
+      expect.objectContaining({ name: 'InvalidFileError', reason: 'not_behavior_tree', detail })
     );
+  });
+});
+
+describe('describeJsonShape', () => {
+  it('outlines keys and value types, one level into objects', () => {
+    const nested = {
+      name: 'Guard AI',
+      root: { id: 1, name: 'Sequence', children: [{ id: 2, name: 'Patrol' }] },
+      desc: null,
+      export: true,
+      version: 2,
+      tags: ['a'],
+    };
+    expect(describeJsonShape(nested)).toBe('{name:string,root:{id,name,children},desc:null,export:boolean,version:number,tags:array}');
+  });
+
+  it('never includes values', () => {
+    const outline = describeJsonShape({ title: 'Secret Boss Fight', root: { name: 'Hidden Strategy' } });
+    expect(outline).not.toMatch(/Secret|Hidden|Boss|Strategy/);
+  });
+
+  it('counts keys that look like content instead of naming them', () => {
+    expect(describeJsonShape({ 'Enemy Patrol': {}, 'Boss Fight': {}, trees: {} })).toBe('{trees:{},+2}');
+    expect(describeJsonShape({ nodes: { 'Attack Player': {}, 'Flee!': {} } })).toBe('{nodes:{+2}}');
+  });
+
+  it('caps how many keys it names', () => {
+    const wide = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`k${i}`, i]));
+    expect(describeJsonShape(wide)).toBe('{k0:number,k1:number,k2:number,k3:number,k4:number,k5:number,k6:number,k7:number,+4}');
+  });
+
+  it('stays within 160 characters', () => {
+    const long = Object.fromEntries(
+      Array.from({ length: 8 }, (_, i) => [`a_rather_long_schema_key_${i}`, { first_child_key: 1, second_child_key: 2, third_child_key: 3 }])
+    );
+    expect(describeJsonShape(long).length).toBeLessThanOrEqual(160);
   });
 
   it('converts legacy React-schema projects', () => {
