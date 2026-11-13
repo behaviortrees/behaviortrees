@@ -3,9 +3,10 @@
 # so this runs every 6 hours over the last 23: up to three missed runs in a row
 # lose nothing, and request IDs make the overlap free.
 #
-# Secrets: VERCEL_TOKEN (a token scoped to the behaviortrees project) and
-# DATABASE_URL (the production Neon connection string). The CLI can't look up
-# a team from a project-scoped token, so the team and project go by ID.
+# Secrets: VERCEL_TOKEN (scoped to the hoskins team, with an expiry: Vercel
+# denies project-scoped tokens access to request logs) and DATABASE_URL (the
+# production Neon connection string). The team and project go by ID, so the
+# CLI needs no user lookup.
 name: Vercel request logs
 
 on:

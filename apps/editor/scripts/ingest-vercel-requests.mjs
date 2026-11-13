@@ -92,9 +92,9 @@ function runVercel(args) {
   });
 }
 
-// A project-scoped token has no user, so the CLI can't resolve --scope with
-// it (404 "User not found"). In CI it targets VERCEL_ORG_ID and
-// VERCEL_PROJECT_ID from the environment instead.
+// In CI the CLI targets VERCEL_ORG_ID and VERCEL_PROJECT_ID from the
+// environment; resolving --scope needs a user lookup that some tokens can't
+// make (404 "User not found").
 const target = () =>
   process.env.VERCEL_ORG_ID && process.env.VERCEL_PROJECT_ID
     ? []
