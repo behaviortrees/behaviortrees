@@ -98,6 +98,13 @@ describe('parsePage', () => {
     expect(parsePage(line({ type: 'summary', pagination: { hasMore: false, next: null } })).next).toBeNull();
   });
 
+  it.each([
+    ['empty output', ''],
+    ['records without a summary', line({ type: 'request', data: record })],
+  ])('throws on %s, so a failed CLI run never reads as no requests', (_case, output) => {
+    expect(() => parsePage(output)).toThrow(/no summary line/);
+  });
+
   it('throws on an error line, such as an expired token or a too-old window', () => {
     const error = line({
       status: 'error',

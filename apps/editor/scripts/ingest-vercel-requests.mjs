@@ -56,17 +56,19 @@ export function toRow(record) {
 
 // One page of `vercel logs requests --json`: request lines, then a summary
 // line with the cursor for the next page. Errors come back as a status line.
+// No summary means the CLI stopped early, which must not pass as "no requests".
 export function parsePage(output) {
   const records = [];
-  let next = null;
+  let summary = null;
   for (const line of output.split('\n')) {
     if (!line.trim()) continue;
     const entry = JSON.parse(line);
     if (entry.status === 'error') throw new Error(`vercel logs failed: ${entry.message}`);
     if (entry.type === 'request') records.push(entry.data);
-    if (entry.type === 'summary') next = entry.pagination?.hasMore ? entry.pagination.next : null;
+    if (entry.type === 'summary') summary = entry;
   }
-  return { records, next };
+  if (!summary) throw new Error('vercel logs printed no summary line');
+  return { records, next: summary.pagination?.hasMore ? summary.pagination.next : null };
 }
 
 function runVercel(args) {
@@ -78,11 +80,13 @@ function runVercel(args) {
     child.stderr.on('data', (chunk) => (stderr += chunk));
     child.on('error', reject);
     child.on('close', (code) => {
-      // Errors are printed as a JSON status line, sometimes with exit code 0
+      const output = `\nexit code ${code}\nstderr: ${stderr.trim().slice(-2000)}\nstdout: ${stdout.trim().slice(-2000)}`;
       try {
-        resolve(parsePage(stdout));
+        const page = parsePage(stdout);
+        if (code !== 0) throw new Error('vercel logs exited with an error');
+        resolve(page);
       } catch (error) {
-        reject(code === 0 ? error : new Error(`${error.message}\n${stderr.trim()}`));
+        reject(new Error(`${error.message}${output}`));
       }
     });
   });
