@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/editor/src/lib/**",
+        "$TURBO_ROOT$/apps/editor/src/types/**",
+        "$TURBO_ROOT$/apps/editor/package.json",
+        "$TURBO_ROOT$/packages/examples/trees/**"
+      ]
+    },
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/editor/src/lib/**",
+        "$TURBO_ROOT$/apps/editor/src/types/**",
+        "$TURBO_ROOT$/apps/editor/package.json",
+        "$TURBO_ROOT$/packages/examples/trees/**"
+      ]
+    },
+    "lint": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/editor/src/lib/**",
+        "$TURBO_ROOT$/apps/editor/src/types/**",
+        "$TURBO_ROOT$/apps/editor/package.json",
+        "$TURBO_ROOT$/packages/examples/trees/**"
+      ]
+    }
+  }
+}

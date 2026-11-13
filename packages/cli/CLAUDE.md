@@ -3,6 +3,7 @@
 `behaviortrees` on npm: a CLI (`src/cli.ts`), a library (`src/index.ts`) and an MCP server (`src/mcp.ts`, plus the stateless Streamable HTTP handler in `src/http.ts`).
 
 - The tree logic is the editor's own (`apps/editor/src/lib/behavior`, `lib/share-link.ts`), imported through `src/core/editor.ts` and bundled by `build.mjs` (esbuild). Never fork that logic here; change it in the editor so both stay identical. Editor code it pulls in must run in Node: no browser globals at import time.
+- Turborepo only hashes a package's own files, so `turbo.json` here lists the editor's `src/lib` and `src/types` as inputs to build, test and lint. Without them, Vercel's remote cache replays a stale CLI build, and `/mcp` keeps serving old tree code after editor changes. If the CLI starts importing editor code from anywhere else, add that path there.
 - BT.CPP import needs `DOMParser`; `src/core/xml-dom.ts` installs one backed by @xmldom/xmldom (jsdom fails to load on Vercel's runtime). It passes the editor's BT.CPP test suite except one assertion on jsdom's exact error wording.
 - `src/core/validate.ts` is the one piece with no editor equivalent: structural checks on behavior3 input as written, which the editor's import silently smooths over.
 - Types for consumers are hand-written in `types/` (copied to `dist/` on build). Keep them in sync with `src/index.ts` and `src/server.ts`.
