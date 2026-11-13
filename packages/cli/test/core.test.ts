@@ -111,6 +111,11 @@ describe('validateTree', () => {
 		const xml = `<root BTCPP_format="4"><BehaviorTree ID="Main"><Sequence><AlwaysSuccess/><Sleep msec="10"/></Sequence></BehaviorTree></root>`;
 		expect(await validateTree(xml)).toMatchObject({ valid: true, format: 'btcpp', kind: 'tree', trees: [{ title: 'Main', nodes: 3 }] });
 	});
+
+	it('reads BehaviorTree.CPP XML that only tinyxml2 accepts', async () => {
+		const xml = `\n<?xml version="1.0"?>\n<root BTCPP_format="4"><BehaviorTree ID="Main"><Sequence><Script code="ok := x < 3 && y > 1"/><AlwaysSuccess _skipIf="!ok"/></Sequence></BehaviorTree></root>`;
+		expect(await validateTree(xml)).toMatchObject({ valid: true, format: 'btcpp', trees: [{ title: 'Main', nodes: 3 }] });
+	});
 });
 
 describe('convertTree', () => {
