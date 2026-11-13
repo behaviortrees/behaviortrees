@@ -97,6 +97,8 @@ export type AnalyticsEventMap = {
     reason: ImportFailureReason;
     // invalid_xml: "line:column: parser message", e.g. "3:37: not well-formed".
     // not_behavior_tree (BT.CPP): what the file had instead, e.g. "root element <svg>"
+    // not_behavior_tree (JSON): the file's outline, e.g. "{name:string,root:{id,name,children}}"
+    // invalid_json: JSON.parse's message without quoted input, e.g. "… at position 13 (line 3 column 3)"
     detail?: string;
   };
   export: {

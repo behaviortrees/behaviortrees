@@ -13,7 +13,7 @@ import { useProjectStore } from '../../stores/useProjectStore';
 import { b3ToTree, parseImportedJson } from '../../lib/behavior/b3';
 import { isLikelyXml, parseBtcppXml, summarizeIssues } from '../../lib/behavior/btcpp';
 import { track } from '../../lib/analytics';
-import { trackImportError } from '../../lib/import-tracking';
+import { trackImportError, trackInvalidJson } from '../../lib/import-tracking';
 import { setProjectOrigin } from '../../lib/product-metrics';
 import { toast } from 'sonner';
 import { ClipboardPaste, FileUp, Workflow } from 'lucide-react';
@@ -147,8 +147,8 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onOpenChange }) => {
 		let json: unknown;
 		try {
 			json = JSON.parse(text);
-		} catch {
-			track('import_failed', { source, format: 'b3', reason: 'invalid_json' });
+		} catch (error) {
+			trackInvalidJson(error, { source, format: 'b3' });
 			toast.error('Not valid JSON or XML. Check the file contents.');
 			return false;
 		}

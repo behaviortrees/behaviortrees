@@ -381,12 +381,33 @@ function convertLegacyProject(data: unknown): Project {
   return project;
 }
 
+// The outline of a JSON file we can't read, for analytics: keys and value
+// types, never values. Keys that don't look like schema fields (a tree title
+// used as a key, say) are only counted.
+const SCHEMA_KEY = /^[$@_A-Za-z][\w$@.-]{0,31}$/;
+const jsonKind = (value: unknown) => (value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value);
+
+function outlineKeys(entries: [string, unknown][], limit: number, describe: (value: unknown) => string): string {
+  const shown = entries.filter(([key]) => SCHEMA_KEY.test(key)).slice(0, limit);
+  const parts = shown.map(([key, value]) => `${key}${describe(value)}`);
+  if (entries.length > shown.length) parts.push(`+${entries.length - shown.length}`);
+  return parts.join(',');
+}
+
+export function describeJsonShape(data: unknown): string {
+  if (jsonKind(data) !== 'object') return `top-level ${jsonKind(data)}`;
+  const outline = outlineKeys(Object.entries(data as object), 8, (value) =>
+    jsonKind(value) === 'object' ? `:{${outlineKeys(Object.entries(value as object), 5, () => '')}}` : `:${jsonKind(value)}`
+  );
+  return `{${outline}}`.slice(0, 160);
+}
+
 export function parseImportedJson(data: unknown): ImportedData {
   if (Array.isArray(data)) {
     return { kind: 'nodes', nodes: b3ToNodes(data as B3NodeTemplate[]) };
   }
   if (!data || typeof data !== 'object') {
-    throw new InvalidFileError('Not a behavior tree file', 'not_behavior_tree');
+    throw new InvalidFileError('Not a behavior tree file', 'not_behavior_tree', describeJsonShape(data));
   }
   const d = data as Record<string, unknown>;
   if (isLegacyReactProject(d)) {
@@ -401,5 +422,5 @@ export function parseImportedJson(data: unknown): ImportedData {
   if (d.scope === 'node' && d.name) {
     return { kind: 'nodes', nodes: b3ToNodes([d as B3NodeTemplate]) };
   }
-  throw new InvalidFileError('Unrecognized behavior tree file format', 'not_behavior_tree');
+  throw new InvalidFileError('Unrecognized behavior tree file format', 'not_behavior_tree', describeJsonShape(d));
 }
