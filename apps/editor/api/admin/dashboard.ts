@@ -17,6 +17,16 @@ import {
   type PostHogStats,
   type TrafficStats,
 } from '../_lib/analytics-sources.js';
+import {
+  fetchCrawlerStats,
+  fetchFailingRequests,
+  fetchMcpStats,
+  fetchNpmStats,
+  type CrawlerStats,
+  type FailingRequestStats,
+  type McpStats,
+  type NpmStats,
+} from '../_lib/usage-sources.js';
 
 type SectionError = { error: string };
 
@@ -43,6 +53,10 @@ export type AdminDashboardResponse = {
   errors: ErrorStats | SectionError;
   projects: ProjectsSection | SectionError;
   interests: CommercialInterestStats | SectionError;
+  mcp: McpStats | SectionError;
+  npm: NpmStats | SectionError;
+  crawlers: CrawlerStats | SectionError;
+  failing: FailingRequestStats | SectionError;
 };
 
 // In-memory cache survives on warm lambdas only, which is enough to keep
@@ -115,14 +129,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const [traffic, posthog, btcpp, errors, projects, interests] = await Promise.allSettled([
-    fetchTrafficStats(),
-    fetchPostHogStats(),
-    fetchBtcppStats(),
-    fetchErrorStats(),
-    fetchProjectsSection(),
-    getCommercialInterestStats(),
-  ]);
+  const [traffic, posthog, btcpp, errors, projects, interests, mcp, npm, crawlers, failing] =
+    await Promise.allSettled([
+      fetchTrafficStats(),
+      fetchPostHogStats(),
+      fetchBtcppStats(),
+      fetchErrorStats(),
+      fetchProjectsSection(),
+      getCommercialInterestStats(),
+      fetchMcpStats(),
+      fetchNpmStats(),
+      fetchCrawlerStats(),
+      fetchFailingRequests(),
+    ]);
 
   const body: AdminDashboardResponse = {
     generatedAt: new Date().toISOString(),
@@ -133,6 +152,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     errors: settled(errors, 'errors'),
     projects: settled(projects, 'projects'),
     interests: settled(interests, 'interests'),
+    mcp: settled(mcp, 'mcp'),
+    npm: settled(npm, 'npm'),
+    crawlers: settled(crawlers, 'crawlers'),
+    failing: settled(failing, 'failing'),
   };
 
   cache = { at: Date.now(), body };

@@ -1,0 +1,36 @@
+# Copies Vercel's CDN request logs for production into Neon (vercel_requests)
+# for the admin dashboard. Vercel keeps them a day without Observability Plus,
+# so this runs every 6 hours over the last 23: up to three missed runs in a row
+# lose nothing, and request IDs make the overlap free.
+#
+# Secrets: VERCEL_TOKEN (a token with access to the hoskins team) and
+# DATABASE_URL (the production Neon connection string).
+name: Vercel request logs
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-logs
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @behaviortrees/editor
+      - run: npm install --global vercel@65.2.0
+      - run: node scripts/ingest-vercel-requests.mjs
+        working-directory: apps/editor
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

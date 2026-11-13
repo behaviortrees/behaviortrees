@@ -219,3 +219,90 @@ export async function getCommercialInterestStats(): Promise<CommercialInterestSt
     })),
   };
 }
+
+// --- Vercel request logs (copied in by scripts/ingest-vercel-requests.mjs) ---
+
+export type RequestLogCoverage = { first: string | null; last: string | null; rows: number };
+
+export async function getRequestLogCoverage(): Promise<RequestLogCoverage> {
+  const [row] = await sql()`
+    select min(ts) as first, max(ts) as last, count(*)::int as rows from vercel_requests
+  `;
+  return {
+    first: row?.first ? new Date(row.first as string).toISOString() : null,
+    last: row?.last ? new Date(row.last as string).toISOString() : null,
+    rows: Number(row?.rows ?? 0),
+  };
+}
+
+export type AgentDayRow = { day: string; userAgent: string; status: number; count: number };
+
+// Requests per day, user agent and status over the last 30 days: either the
+// MCP endpoint, or the site's pages (everything outside /api and /mcp)
+export async function getAgentDailyCounts(target: 'mcp' | 'pages'): Promise<AgentDayRow[]> {
+  const mcp = target === 'mcp';
+  const rows = await sql()`
+    select to_char(date_trunc('day', ts), 'YYYY-MM-DD') as day,
+           coalesce(user_agent, '') as user_agent,
+           status,
+           count(*)::int as count
+    from vercel_requests
+    where ts >= now() - interval '30 days'
+      and ((${mcp} and path = '/mcp') or (not ${mcp} and path <> '/mcp' and path not like '/api/%'))
+    group by 1, 2, 3
+  `;
+  return rows.map((row) => ({
+    day: String(row.day),
+    userAgent: String(row.user_agent),
+    status: Number(row.status),
+    count: Number(row.count),
+  }));
+}
+
+export type FailingRequestRow = {
+  status: number;
+  path: string;
+  count: number;
+  agents: number;
+  lastSeen: string;
+};
+
+export async function getFailingRequests(): Promise<{
+  top: FailingRequestRow[];
+  daily: { day: string; clientErrors: number; serverErrors: number }[];
+}> {
+  const [top, daily] = await Promise.all([
+    sql()`
+      select status, path, count(*)::int as count,
+             count(distinct coalesce(user_agent, ''))::int as agents, max(ts) as last_seen
+      from vercel_requests
+      where ts >= now() - interval '7 days' and status >= 400
+      group by status, path
+      order by count desc
+      limit 25
+    `,
+    sql()`
+      select to_char(date_trunc('day', ts), 'YYYY-MM-DD') as day,
+             count(*) filter (where status between 400 and 499)::int as client_errors,
+             count(*) filter (where status >= 500)::int as server_errors
+      from vercel_requests
+      where ts >= now() - interval '30 days' and status >= 400
+      group by 1
+      order by 1
+    `,
+  ]);
+  return {
+    top: top.map((row) => ({
+      status: Number(row.status),
+      path: String(row.path),
+      count: Number(row.count),
+      agents: Number(row.agents),
+      lastSeen: new Date(row.last_seen as string).toISOString(),
+    })),
+    daily: daily.map((row) => ({
+      day: String(row.day),
+      clientErrors: Number(row.client_errors),
+      serverErrors: Number(row.server_errors),
+    })),
+  };
+}

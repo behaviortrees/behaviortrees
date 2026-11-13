@@ -38,3 +38,29 @@ create table if not exists commercial_interests (
 
 create index if not exists commercial_interests_created_idx
   on commercial_interests (created_at desc);
+
+-- Vercel CDN request logs. Vercel keeps them a day, so
+-- .github/workflows/vercel-logs.yml copies them here every 6 hours
+-- (scripts/ingest-vercel-requests.ts). Static assets and the PostHog proxy
+-- are skipped. Vercel's export has the visitor's country, never the IP.
+create table if not exists vercel_requests (
+  request_id     text primary key,
+  ts             timestamptz not null,
+  method         text not null,
+  host           text not null,
+  path           text not null,
+  status         integer not null,
+  route          text,
+  cache_result   text,
+  region         text,
+  country        text,
+  user_agent     text,
+  waf_action     text,
+  deployment_id  text
+);
+
+create index if not exists vercel_requests_ts_idx
+  on vercel_requests (ts desc);
+
+create index if not exists vercel_requests_path_ts_idx
+  on vercel_requests (path, ts desc);
