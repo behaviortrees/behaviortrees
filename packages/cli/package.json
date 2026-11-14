@@ -1,6 +1,6 @@
 {
   "name": "behaviortrees",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Validate, convert and share behavior trees (behavior3 JSON, BehaviorTree.CPP XML) from the command line or any MCP client.",
   "license": "AGPL-3.0-only",
   "homepage": "https://www.behaviortrees.com",
