@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { getExample, listExamples, listNodeTypes } from './core/catalog';
 import { convertTree, CONVERT_TARGETS } from './core/convert';
@@ -38,7 +38,7 @@ export function createMcpServer(): McpServer {
 		{
 			title: 'Validate a behavior tree',
 			description: `Checks a behavior tree for errors: missing or dangling children, nodes with two parents, cycles, decorators with more than one child, leaves with children, unknown node names, and BehaviorTree.CPP import problems. Returns valid (true when there are no errors), the trees found, and findings at error, warning or info level.`,
-			inputSchema: { tree: treeInput },
+			inputSchema: z.object({ tree: treeInput }),
 			annotations: { ...readOnly, title: 'Validate a behavior tree' },
 		},
 		async ({ tree }) => text(await validateTree(tree)),
@@ -49,7 +49,7 @@ export function createMcpServer(): McpServer {
 		{
 			title: 'Open a tree in the editor',
 			description: `Returns a url that opens the tree in the behaviortrees.com editor in the user's browser, auto-laid-out and editable, with no account needed. The tree travels inside the link (the URL fragment), so nothing is uploaded or stored. Fails with the validation errors if the tree has any.`,
-			inputSchema: { tree: treeInput },
+			inputSchema: z.object({ tree: treeInput }),
 			annotations: { ...readOnly, title: 'Open a tree in the editor' },
 		},
 		async ({ tree }) => {
@@ -67,10 +67,10 @@ export function createMcpServer(): McpServer {
 			title: 'Convert a behavior tree',
 			description:
 				'Convert between behavior3 JSON and BehaviorTree.CPP XML (v4 for ROS 2 Jazzy and Groot2, v3 for ROS 2 Humble), the same way the editor imports and exports. Returns the converted text and any issues (BT.CPP has no equivalent for some behavior3 nodes and vice versa).',
-			inputSchema: {
+			inputSchema: z.object({
 				tree: treeInput,
 				to: z.enum(CONVERT_TARGETS as [string, ...string[]]).describe('Target format: behavior3, btcpp-v4 or btcpp-v3'),
-			},
+			}),
 			annotations: { ...readOnly, title: 'Convert a behavior tree' },
 		},
 		async ({ tree, to }) => {
@@ -92,7 +92,7 @@ export function createMcpServer(): McpServer {
 			title: 'List built-in node types',
 			description:
 				'The built-in behavior3 nodes a tree can use without declaring them: composites (Sequence, Priority = selector/fallback, MemSequence, MemPriority), decorators (Inverter, Repeater, MaxTime, ...) and leaves (Wait, Succeeder, Failer, ...), with descriptions and default properties.',
-			inputSchema: {},
+			inputSchema: z.object({}),
 			annotations: { ...readOnly, title: 'List built-in node types' },
 		},
 		async () => text(listNodeTypes()),
@@ -104,7 +104,7 @@ export function createMcpServer(): McpServer {
 			title: 'Get an example tree',
 			description:
 				'Complete, working example trees (enemy patrol, cooldown-gated attacks, robot navigation with recovery, and more) to learn the format from or start with. Without an id, lists the examples; with an id, returns that tree as behavior3 JSON.',
-			inputSchema: { id: z.string().optional().describe('Example id from the list; omit to list them') },
+			inputSchema: z.object({ id: z.string().optional().describe('Example id from the list; omit to list them') }),
 			annotations: { ...readOnly, title: 'Get an example tree' },
 		},
 		async ({ id }) => {
@@ -120,7 +120,7 @@ export function createMcpServer(): McpServer {
 			title: 'Read a behavior tree guide',
 			description:
 				'Practical guides from behaviortrees.com/learn as Markdown: what behavior trees are, node types, blackboards, debugging, structuring large trees, and behavior trees in Unity, Unreal, Godot, Python and robotics (BehaviorTree.CPP, ROS 2, Nav2). Without a slug, lists the guides.',
-			inputSchema: { slug: z.string().optional().describe('Guide slug from the list; omit to list them') },
+			inputSchema: z.object({ slug: z.string().optional().describe('Guide slug from the list; omit to list them') }),
 			annotations: { ...readOnly, openWorldHint: true, title: 'Read a behavior tree guide' },
 		},
 		async ({ slug }) => {

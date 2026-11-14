@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 
 export declare function createMcpServer(): McpServer;
 // Stateless Streamable HTTP handler; pass the parsed JSON body if the host

@@ -149,11 +149,11 @@ async function main(argv: string[]): Promise<number> {
 		}
 
 		case 'mcp': {
-			const [{ StdioServerTransport }, { createMcpServer }] = await Promise.all([
-				import('@modelcontextprotocol/sdk/server/stdio.js'),
+			const [{ serveStdio }, { createMcpServer }] = await Promise.all([
+				import('@modelcontextprotocol/server/stdio'),
 				import('./mcp'),
 			]);
-			await createMcpServer().connect(new StdioServerTransport());
+			serveStdio(createMcpServer);
 			return -1;
 		}
 
