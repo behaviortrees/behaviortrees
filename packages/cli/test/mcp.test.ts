@@ -1,8 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { Client, InMemoryTransport, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { handleMcpRequest } from '../src/http';
 import { createMcpServer } from '../src/mcp';
@@ -86,6 +84,31 @@ describe('Streamable HTTP endpoint', () => {
 		const result = await client.callTool({ name: 'list_node_types', arguments: {} });
 		expect(textOf(result)).toContain('Priority');
 		await client.close();
+	});
+
+	it('serves 2026-07-28 clients, which probe with server/discover', async () => {
+		const client = new Client({ name: 'test', version: '0' }, { versionNegotiation: { mode: 'auto' } });
+		await client.connect(new StreamableHTTPClientTransport(url));
+		expect(client.getNegotiatedProtocolVersion()).toBe('2026-07-28');
+		expect(client.getInstructions()).toContain('create_editor_link');
+		const result = await client.callTool({ name: 'get_example', arguments: { id: 'enemy-patrol' } });
+		expect(textOf(result)).toContain('"nodes"');
+		await client.close();
+	});
+
+	it('answers 2025-era requests with plain JSON', async () => {
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json, text/event-stream',
+				'Mcp-Protocol-Version': '2025-11-25',
+			},
+			body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+		});
+		expect(response.status).toBe(200);
+		expect(response.headers.get('content-type')).toContain('application/json');
+		expect((await response.json()).result.tools).toHaveLength(6);
 	});
 
 	it('answers CORS preflights and refuses GET', async () => {
