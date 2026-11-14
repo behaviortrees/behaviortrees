@@ -15,7 +15,7 @@ const CORS = {
 // Stateless Streamable HTTP: every request gets a fresh server, so it runs on
 // serverless functions with no session store. The tools are read-only and
 // public, so there's no auth. `body` is the already-parsed JSON, if any.
-const modern = toNodeHandler(createMcpHandler(createMcpServer, { legacy: 'reject', responseMode: 'json' }));
+const modern = toNodeHandler(createMcpHandler(createMcpServer, { legacy: 'reject' }));
 
 // 2025-era clients (initialize, no per-request _meta) keep plain JSON
 // responses; the SDK's own legacy fallback answers them over SSE
