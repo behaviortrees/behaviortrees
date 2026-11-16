@@ -22,7 +22,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import { descendantIds, readTreeLayout } from '../../lib/behavior/organize';
-import { mergeFlowNodes } from '../../lib/flow-nodes';
+import { mergeFlowNodes, nodeIdAtConnectEnd } from '../../lib/flow-nodes';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { Block } from '../../types';
 import EditorLayout from '../layouts/editor-layout';
@@ -699,12 +699,7 @@ const BehaviorTreeEditor: React.FC = () => {
 
   const onConnectEnd: OnConnectEnd = useCallback(
     (event) => {
-      // Handle both mouse and touch events
-      const targetElement = event instanceof MouseEvent ?
-        (event.target as Element) :
-        (event.touches?.[0].target as Element);
-
-      const targetNodeId = targetElement.closest('.react-flow__node')?.getAttribute('data-id');
+      const targetNodeId = nodeIdAtConnectEnd(event);
 
       if (connectingNodeId.current && targetNodeId && project && selectedTreeId) {
         // Create the connection using the store
