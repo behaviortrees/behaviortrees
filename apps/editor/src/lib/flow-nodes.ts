@@ -40,3 +40,16 @@ export const mergeFlowNodes = (currentNodes: Node[], flowNodes: Node[]): Node[] 
     };
   });
 };
+
+// A touch's target is where the finger went down, and touchend has no touches
+// left, so a touch drop is found from where the finger lifted.
+export const nodeIdAtConnectEnd = (event: MouseEvent | TouchEvent): string | null => {
+  let element: Element | null;
+  if ('changedTouches' in event) {
+    const touch = event.changedTouches[0];
+    element = touch ? document.elementFromPoint(touch.clientX, touch.clientY) : null;
+  } else {
+    element = event.target instanceof Element ? event.target : null;
+  }
+  return element?.closest('.react-flow__node')?.getAttribute('data-id') ?? null;
+};

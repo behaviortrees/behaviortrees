@@ -1,7 +1,8 @@
+// @vitest-environment jsdom
 import type { Node } from 'reactflow';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { mergeFlowNodes } from './flow-nodes';
+import { mergeFlowNodes, nodeIdAtConnectEnd } from './flow-nodes';
 
 const node = (id: string, x = 0, y = 0, extra: Record<string, unknown> = {}): Node => ({
   id,
@@ -52,5 +53,42 @@ describe('mergeFlowNodes', () => {
     expect(merged[0].data.title).toBe('Renamed');
     expect(merged[0].position).toEqual({ x: 90, y: 90 });
     expect(merged[0].data.position).toEqual({ x: 90, y: 90 });
+  });
+});
+
+describe('nodeIdAtConnectEnd', () => {
+  const flowNode = (id: string) => {
+    const el = document.createElement('div');
+    el.className = 'react-flow__node';
+    el.dataset.id = id;
+    el.appendChild(document.createElement('span'));
+    return el;
+  };
+
+  it('finds the node under a mouse release', () => {
+    const target = flowNode('a').firstElementChild!;
+    expect(nodeIdAtConnectEnd({ target } as unknown as MouseEvent)).toBe('a');
+  });
+
+  it('returns null when the mouse is released off a node', () => {
+    const target = document.createElement('div');
+    expect(nodeIdAtConnectEnd({ target } as unknown as MouseEvent)).toBeNull();
+  });
+
+  it('finds the node where a touch lifted, not where it started', () => {
+    const lifted = flowNode('b').firstElementChild!;
+    document.elementFromPoint = vi.fn(() => lifted);
+    const event = {
+      target: flowNode('a'),
+      touches: [],
+      changedTouches: [{ clientX: 40, clientY: 60 }],
+    } as unknown as TouchEvent;
+    expect(nodeIdAtConnectEnd(event)).toBe('b');
+    expect(document.elementFromPoint).toHaveBeenCalledWith(40, 60);
+  });
+
+  it('returns null for a touchend with no touch points', () => {
+    const event = { touches: [], changedTouches: [] } as unknown as TouchEvent;
+    expect(nodeIdAtConnectEnd(event)).toBeNull();
   });
 });
