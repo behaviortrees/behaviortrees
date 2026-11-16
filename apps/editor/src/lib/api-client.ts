@@ -120,10 +120,11 @@ export type BtcppSection = {
 };
 
 export type ErrorsSection = {
+  activeOnly: boolean;
   total30d: number;
   users30d: number;
   daily: { date: string; count: number }[];
-  top: { type: string; message: string; count: number; users: number; lastSeen: number }[];
+  top: { type: string; message: string; count: number; users: number; lastSeen: number; url?: string }[];
   url: string;
 };
 
