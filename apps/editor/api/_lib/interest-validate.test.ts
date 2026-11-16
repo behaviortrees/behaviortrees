@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateCommercialInterest } from './interest-validate.js';
+import { parseInterestStatusUpdate, validateCommercialInterest } from './interest-validate.js';
 
 const valid = {
   email: 'Developer@example.com',
@@ -36,5 +36,21 @@ describe('commercial interest validation', () => {
         obstacleDetail: 'x'.repeat(1001),
       }).ok
     ).toBe(false);
+  });
+});
+
+describe('interest status updates', () => {
+  it('accepts each status for a request id', () => {
+    for (const status of ['new', 'reviewed', 'replied']) {
+      expect(parseInterestStatusUpdate({ id: 7, status })).toEqual({ id: 7, status });
+    }
+  });
+
+  it('rejects unknown statuses, bad ids and missing bodies', () => {
+    expect(parseInterestStatusUpdate({ id: 7, status: 'archived' })).toBeNull();
+    expect(parseInterestStatusUpdate({ id: '7', status: 'reviewed' })).toBeNull();
+    expect(parseInterestStatusUpdate({ id: 0, status: 'reviewed' })).toBeNull();
+    expect(parseInterestStatusUpdate({ id: 1.5, status: 'reviewed' })).toBeNull();
+    expect(parseInterestStatusUpdate(undefined)).toBeNull();
   });
 });

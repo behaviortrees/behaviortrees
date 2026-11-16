@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import type { ValidatedCommercialInterest } from './interest-validate.js';
+import type { InterestStatus, ValidatedCommercialInterest } from './interest-validate.js';
 
 // All SQL lives here so a later swap to a query builder stays localized.
 
@@ -150,7 +150,9 @@ export async function upsertCommercialInterest(
           obstacle_detail = excluded.obstacle_detail,
           source_path = excluded.source_path,
           contact_consent = excluded.contact_consent,
-          updated_at = now()
+          updated_at = now(),
+          status = 'new',
+          status_updated_at = null
     returning (xmax = 0) as inserted
   `;
   return { isNew: rows[0]?.inserted === true };
@@ -158,10 +160,14 @@ export async function upsertCommercialInterest(
 
 export type CommercialInterestStats = {
   total: number;
+  newCount: number;
   byPlan: { name: string; value: number }[];
   byRuntime: { name: string; value: number }[];
   byUsage: { name: string; value: number }[];
   latest: {
+    id: number;
+    status: InterestStatus;
+    statusUpdatedAt: string | null;
     email: string;
     plan: string;
     runtime: string;
@@ -174,7 +180,10 @@ export type CommercialInterestStats = {
 
 export async function getCommercialInterestStats(): Promise<CommercialInterestStats> {
   const [totalRows, planRows, runtimeRows, usageRows, latestRows] = await Promise.all([
-    sql()`select count(*)::int as total from commercial_interests`,
+    sql()`
+      select count(*)::int as total, (count(*) filter (where status = 'new'))::int as new_count
+      from commercial_interests
+    `,
     sql()`
       select plan as name, count(*)::int as value
       from commercial_interests group by plan order by value desc
@@ -188,8 +197,8 @@ export async function getCommercialInterestStats(): Promise<CommercialInterestSt
       from commercial_interests group by usage_mode order by value desc
     `,
     sql()`
-      select email_normalized, plan, runtime, usage_mode, obstacle,
-             obstacle_detail, created_at
+      select id, status, status_updated_at, email_normalized, plan, runtime,
+             usage_mode, obstacle, obstacle_detail, created_at
       from commercial_interests
       order by created_at desc
       limit 20
@@ -204,10 +213,15 @@ export async function getCommercialInterestStats(): Promise<CommercialInterestSt
 
   return {
     total: Number(totalRows[0]?.total ?? 0),
+    newCount: Number(totalRows[0]?.new_count ?? 0),
     byPlan: ranked(planRows),
     byRuntime: ranked(runtimeRows),
     byUsage: ranked(usageRows),
     latest: latestRows.map((row) => ({
+      id: Number(row.id),
+      status: row.status as InterestStatus,
+      statusUpdatedAt:
+        row.status_updated_at === null ? null : new Date(row.status_updated_at as string).toISOString(),
       email: String(row.email_normalized),
       plan: String(row.plan),
       runtime: String(row.runtime),
@@ -218,6 +232,19 @@ export async function getCommercialInterestStats(): Promise<CommercialInterestSt
       createdAt: new Date(row.created_at as string).toISOString(),
     })),
   };
+}
+
+export async function setCommercialInterestStatus(
+  id: number,
+  status: InterestStatus
+): Promise<string | null> {
+  const rows = await sql()`
+    update commercial_interests
+    set status = ${status}, status_updated_at = now()
+    where id = ${id}
+    returning status_updated_at
+  `;
+  return rows[0] ? new Date(rows[0].status_updated_at as string).toISOString() : null;
 }
 
 // --- Vercel request logs (copied in by scripts/ingest-vercel-requests.mjs) ---

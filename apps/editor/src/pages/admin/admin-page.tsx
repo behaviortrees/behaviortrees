@@ -8,11 +8,13 @@ import {
   BtcppSection,
   CommercialInterestsSection,
   ErrorsSection,
+  InterestStatus,
   PostHogSection,
   ProjectsSection,
   SectionError,
   TrafficSection,
   fetchAdminDashboard,
+  setInterestStatus,
 } from '../../lib/api-client';
 import { Button } from '../../components/ui/button';
 import { CliMcpCard, CrawlersCard, FailingRequestsCard } from './usage-cards';
@@ -308,9 +310,19 @@ const RetentionCard: React.FC<{ data: PostHogSection | SectionError }> = ({ data
   </div>
 );
 
+type InterestRow = CommercialInterestsSection['latest'][number];
+
+const INTEREST_STATUS_LABELS: Record<InterestStatus, string> = {
+  new: 'New',
+  reviewed: 'Reviewed',
+  replied: 'Replied',
+};
+
 const CommercialInterestsCard: React.FC<{
   data: CommercialInterestsSection | SectionError;
-}> = ({ data }) => {
+  onStatusChange: (id: number, status: InterestStatus) => void;
+  statusError: string | null;
+}> = ({ data, onStatusChange, statusError }) => {
   if (isSectionError(data)) {
     return (
       <div className="card">
@@ -322,7 +334,10 @@ const CommercialInterestsCard: React.FC<{
 
   return (
     <div className="card">
-      <h2 className="text-xl font-medium mb-4">Early-access requests</h2>
+      <div className="flex justify-between items-baseline mb-4">
+        <h2 className="text-xl font-medium">Early-access requests</h2>
+        <span className="text-sm text-faint">{formatNumber(data.newCount)} new</span>
+      </div>
       <div className="grid gap-8 md:grid-cols-3">
         <RankedTable title="By plan" rows={data.byPlan} />
         <RankedTable title="By runtime" rows={data.byRuntime} />
@@ -330,10 +345,12 @@ const CommercialInterestsCard: React.FC<{
       </div>
 
       <h3 className="mt-8 mb-2 text-sm font-medium text-muted">Latest requests</h3>
+      {statusError && <p className="mb-2 text-sm text-red-500">{statusError}</p>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-muted">
+              <th className="pb-2 font-medium">Status</th>
               <th className="pb-2 font-medium">Email</th>
               <th className="pb-2 font-medium">Plan</th>
               <th className="pb-2 font-medium">Runtime</th>
@@ -344,8 +361,28 @@ const CommercialInterestsCard: React.FC<{
           </thead>
           <tbody>
             {data.latest.map((row) => (
-              <tr key={`${row.email}-${row.plan}`} className="border-t border-divider align-top">
-                <td className="py-1.5 pr-4">{row.email}</td>
+              <tr key={row.id} className="border-t border-divider align-top">
+                <td className="py-1.5 pr-4">
+                  <select
+                    value={row.status}
+                    onChange={(event) => onStatusChange(row.id, event.target.value as InterestStatus)}
+                    aria-label={`Status of ${row.email}`}
+                    title={
+                      row.statusUpdatedAt
+                        ? `Set ${new Date(row.statusUpdatedAt).toLocaleString()}`
+                        : undefined
+                    }
+                  >
+                    {Object.entries(INTEREST_STATUS_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className={`py-1.5 pr-4 ${row.status === 'new' ? 'font-medium' : 'text-muted'}`}>
+                  {row.email}
+                </td>
                 <td className="py-1.5 pr-4 text-muted">{row.plan}</td>
                 <td className="py-1.5 pr-4 text-muted">{row.runtime}</td>
                 <td className="py-1.5 pr-4 text-muted">{row.usageMode}</td>
@@ -366,7 +403,7 @@ const CommercialInterestsCard: React.FC<{
             ))}
             {data.latest.length === 0 && (
               <tr>
-                <td className="py-1.5 text-faint" colSpan={6}>
+                <td className="py-1.5 text-faint" colSpan={7}>
                   No requests yet
                 </td>
               </tr>
@@ -433,6 +470,7 @@ const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<AdminDashboardResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const load = useCallback(
     (fresh: boolean) =>
@@ -451,6 +489,32 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (isLoaded && isSignedIn) void load(false);
   }, [isLoaded, isSignedIn, load]);
+
+  const patchInterest = (id: number, patch: Partial<InterestRow>) =>
+    setData((current) => {
+      if (!current || isSectionError(current.interests)) return current;
+      const before = current.interests;
+      const latest = before.latest.map((row) => (row.id === id ? { ...row, ...patch } : row));
+      const countNew = (rows: InterestRow[]) => rows.filter((row) => row.status === 'new').length;
+      const newCount = before.newCount + countNew(latest) - countNew(before.latest);
+      return { ...current, interests: { ...before, latest, newCount } };
+    });
+
+  const changeInterestStatus = (id: number, status: InterestStatus) => {
+    if (!data || isSectionError(data.interests)) return;
+    const previous = data.interests.latest.find((row) => row.id === id);
+    if (!previous) return;
+    setStatusError(null);
+    patchInterest(id, { status });
+    setInterestStatus(id, status, () => getToken()).then(
+      (saved) => patchInterest(id, { statusUpdatedAt: saved.statusUpdatedAt }),
+      (err) => {
+        patchInterest(id, { status: previous.status, statusUpdatedAt: previous.statusUpdatedAt });
+        const reason = err instanceof Error ? err.message : 'request failed';
+        setStatusError(`Couldn't update ${previous.email}: ${reason}`);
+      }
+    );
+  };
 
   const shownError =
     isLoaded && !isSignedIn ? 'Sign in as the admin to view this page.' : error;
@@ -552,7 +616,11 @@ const AdminDashboard: React.FC = () => {
       <BtcppCard data={data.btcpp} />
       <FunnelCard data={data.posthog} />
       <RetentionCard data={data.posthog} />
-      <CommercialInterestsCard data={data.interests} />
+      <CommercialInterestsCard
+        data={data.interests}
+        onStatusChange={changeInterestStatus}
+        statusError={statusError}
+      />
       <LatestProjectsCard data={data.projects} />
     </div>
   );
