@@ -125,7 +125,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const fresh = req.query.fresh === '1';
   if (!fresh && cache && Date.now() - cache.at < CACHE_TTL_MS) {
-    res.status(200).json({ ...cache.body, cached: true });
+    // Requests are read fresh so review statuses set since are never stale
+    const [interests] = await Promise.allSettled([getCommercialInterestStats()]);
+    res.status(200).json({ ...cache.body, cached: true, interests: settled(interests, 'interests') });
     return;
   }
 

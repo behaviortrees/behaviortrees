@@ -128,12 +128,18 @@ export type ErrorsSection = {
   url: string;
 };
 
+export type InterestStatus = 'new' | 'reviewed' | 'replied';
+
 export type CommercialInterestsSection = {
   total: number;
+  newCount: number;
   byPlan: { name: string; value: number }[];
   byRuntime: { name: string; value: number }[];
   byUsage: { name: string; value: number }[];
   latest: {
+    id: number;
+    status: InterestStatus;
+    statusUpdatedAt: string | null;
     email: string;
     plan: string;
     runtime: string;
@@ -224,6 +230,18 @@ export async function fetchAdminDashboard(
   return request<AdminDashboardResponse>(
     `/api/admin/dashboard${fresh ? '?fresh=1' : ''}`,
     undefined,
+    tokenGetter
+  );
+}
+
+export async function setInterestStatus(
+  id: number,
+  status: InterestStatus,
+  tokenGetter: TokenGetter
+): Promise<{ id: number; status: InterestStatus; statusUpdatedAt: string }> {
+  return request(
+    '/api/admin/interests',
+    { method: 'PATCH', body: JSON.stringify({ id, status }) },
     tokenGetter
   );
 }

@@ -51,3 +51,18 @@ export function validateCommercialInterest(
   }
   return { ok: true, interest: parsed.data };
 }
+
+export const INTEREST_STATUSES = ['new', 'reviewed', 'replied'] as const;
+export type InterestStatus = (typeof INTEREST_STATUSES)[number];
+
+const interestStatusUpdateSchema = z.object({
+  id: z.number().int().positive(),
+  status: z.enum(INTEREST_STATUSES),
+});
+
+export function parseInterestStatusUpdate(
+  input: unknown
+): { id: number; status: InterestStatus } | null {
+  const parsed = interestStatusUpdateSchema.safeParse(input);
+  return parsed.success ? parsed.data : null;
+}

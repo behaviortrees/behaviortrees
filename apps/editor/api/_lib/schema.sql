@@ -39,6 +39,13 @@ create table if not exists commercial_interests (
 create index if not exists commercial_interests_created_idx
   on commercial_interests (created_at desc);
 
+-- Follow-up state, set from the admin dashboard. Submitting again resets a
+-- request to new, so changed details get read.
+alter table commercial_interests
+  add column if not exists status text not null default 'new'
+    check (status in ('new', 'reviewed', 'replied')),
+  add column if not exists status_updated_at timestamptz;
+
 -- Vercel CDN request logs. Vercel keeps them a day, so
 -- .github/workflows/vercel-logs.yml copies them here every 6 hours
 -- (scripts/ingest-vercel-requests.ts). Static assets and the PostHog proxy
