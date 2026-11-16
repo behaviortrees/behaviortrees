@@ -210,7 +210,10 @@ const ErrorsCard: React.FC<{ data: ErrorsSection | SectionError }> = ({ data }) 
     ) : (
       <div className="space-y-6">
         <div className="flex gap-6 text-sm text-faint">
-          <span>{formatNumber(data.total30d)} exceptions</span>
+          <span>
+            {formatNumber(data.total30d)}{' '}
+            {data.activeOnly ? 'exceptions in unresolved issues' : 'exceptions, resolved issues included'}
+          </span>
           <span>{formatNumber(data.users30d)} users affected</span>
         </div>
         {data.daily.length > 0 && (
@@ -227,12 +230,18 @@ const ErrorsCard: React.FC<{ data: ErrorsSection | SectionError }> = ({ data }) 
           </thead>
           <tbody>
             {data.top.map((row) => (
-              <tr key={`${row.type}-${row.message}`} className="border-t border-divider">
+              <tr key={row.url ?? `${row.type}-${row.message}`} className="border-t border-divider">
                 <td
                   className="py-1.5 pr-4 truncate max-w-0 w-full"
                   title={`${row.type}: ${row.message}`}
                 >
-                  <span className="font-medium">{row.type}</span>
+                  {row.url ? (
+                    <a href={row.url} target="_blank" rel="noreferrer" className="font-medium hover:underline">
+                      {row.type}
+                    </a>
+                  ) : (
+                    <span className="font-medium">{row.type}</span>
+                  )}
                   {row.message && <span className="text-muted">: {row.message}</span>}
                 </td>
                 <td className="py-1.5 text-right tabular-nums">{formatNumber(row.count)}</td>
@@ -247,7 +256,7 @@ const ErrorsCard: React.FC<{ data: ErrorsSection | SectionError }> = ({ data }) 
             {data.top.length === 0 && (
               <tr>
                 <td className="py-1.5 text-faint" colSpan={4}>
-                  No exceptions in the last 30 days
+                  {data.activeOnly ? 'No unresolved errors in the last 30 days' : 'No exceptions in the last 30 days'}
                 </td>
               </tr>
             )}

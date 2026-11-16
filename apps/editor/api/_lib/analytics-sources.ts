@@ -32,13 +32,15 @@ export type BtcppStats = {
   users30d: { btcpp: number; anyFormat: number };
 };
 
-// Exceptions from posthog-js error tracking, grouped by type and message
+// Exceptions from posthog-js error tracking. With activeOnly, only those in
+// unresolved issues, grouped by issue; otherwise all, by type and message.
 export type ErrorStats = {
+  activeOnly: boolean;
   total30d: number;
   users30d: number;
   daily: { date: string; count: number }[];
-  // lastSeen is epoch milliseconds
-  top: { type: string; message: string; count: number; users: number; lastSeen: number }[];
+  // lastSeen is epoch milliseconds; url links the issue when grouped by issue
+  top: { type: string; message: string; count: number; users: number; lastSeen: number; url?: string }[];
   url: string;
 };
 
@@ -331,50 +333,104 @@ export async function fetchBtcppStats(): Promise<BtcppStats> {
   };
 }
 
+// A resolved issue that happens again goes back to active, so filtering on
+// active never hides a regression
+const IN_ACTIVE_ISSUE = `toString(properties.$exception_issue_id) in (
+  select toString(id) from system.error_tracking_issues where status = 'active'
+)`;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const text = (value: unknown) => (value === null || value === undefined ? '' : String(value));
+
 export async function fetchErrorStats(): Promise<ErrorStats> {
+  const url = `https://us.posthog.com/project/${process.env.POSTHOG_PROJECT_ID}/error-tracking`;
+  // Issue status needs error tracking read access on the key. Without it,
+  // count every exception rather than lose the section.
+  const activeOnly = await posthogQuery(`select count() from system.error_tracking_issues`).then(
+    () => true,
+    () => false
+  );
+  const where = `event = '$exception' and timestamp >= now() - interval 30 day${
+    activeOnly ? ` and ${IN_ACTIVE_ISSUE}` : ''
+  }`;
+
   // $exception_list is a JSON array, outermost exception first
   const [totals, daily, top] = await Promise.all([
     posthogQuery(
       `select count() as c, count(distinct ${VISITOR}) as users
        from events
-       where event = '$exception' and timestamp >= now() - interval 30 day`
+       where ${where}`
     ),
     posthogQuery(
       `select toString(toDate(timestamp)) as day, count() as c
        from events
-       where event = '$exception' and timestamp >= now() - interval 30 day
+       where ${where}
        group by day
        order by day asc`
     ),
     posthogQuery(
-      `select JSONExtractString(properties.$exception_list, 1, 'type') as type,
-              JSONExtractString(properties.$exception_list, 1, 'value') as message,
+      `select ${
+        activeOnly
+          ? `toString(properties.$exception_issue_id) as issue`
+          : `JSONExtractString(properties.$exception_list, 1, 'type') as type,
+              JSONExtractString(properties.$exception_list, 1, 'value') as message`
+      },
               count() as c,
               count(distinct ${VISITOR}) as users,
               toUnixTimestamp(max(timestamp)) as last_seen
        from events
-       where event = '$exception' and timestamp >= now() - interval 30 day
-       group by type, message
+       where ${where}
+       group by ${activeOnly ? 'issue' : 'type, message'}
        order by c desc
        limit 5`
     ),
   ]);
 
+  const counts = (row: unknown[], at: number) => ({
+    count: Number(row[at]),
+    users: Number(row[at + 1]),
+    lastSeen: Number(row[at + 2]) * 1000,
+  });
+
+  let topRows: ErrorStats['top'];
+  if (activeOnly) {
+    const ids = top.map((row) => text(row[0])).filter((id) => UUID.test(id));
+    const issues = ids.length
+      ? await posthogQuery(
+          `select toString(id), name, description
+           from system.error_tracking_issues
+           where toString(id) in (${ids.map((id) => `'${id}'`).join(', ')})`
+        )
+      : [];
+    const byId = new Map(issues.map((row) => [text(row[0]), row]));
+    topRows = top.map((row) => {
+      const id = text(row[0]);
+      const issue = byId.get(id);
+      return {
+        type: text(issue?.[1]) || 'Error',
+        message: text(issue?.[2]),
+        ...counts(row, 1),
+        url: `${url}/${id}`,
+      };
+    });
+  } else {
+    topRows = top.map((row) => ({
+      type: text(row[0]) || 'Error',
+      message: text(row[1]),
+      ...counts(row, 2),
+    }));
+  }
+
   return {
+    activeOnly,
     total30d: Number(totals[0]?.[0] ?? 0),
     users30d: Number(totals[0]?.[1] ?? 0),
     daily: daily.map((row) => ({
       date: String(row[0]),
       count: Number(row[1]),
     })),
-    top: top.map((row) => ({
-      type: String(row[0]) || 'Error',
-      message: String(row[1]),
-      count: Number(row[2]),
-      users: Number(row[3]),
-      lastSeen: Number(row[4]) * 1000,
-    })),
-    // posthogQuery already threw if the project id were missing
-    url: `https://us.posthog.com/project/${process.env.POSTHOG_PROJECT_ID}/error_tracking`,
+    top: topRows,
+    url,
   };
 }
