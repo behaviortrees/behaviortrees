@@ -100,24 +100,21 @@ const target = () =>
     ? []
     : ['--scope', process.env.VERCEL_SCOPE ?? 'hoskins', '--project', process.env.VERCEL_PROJECT ?? 'behaviortrees'];
 
+// A --next cursor carries the first page's project, environment and time
+// window, and the CLI refuses those flags alongside it.
+export function pageArgs(cursor) {
+  const query = cursor
+    ? ['--next', cursor]
+    : [...target(), '--environment', 'production', '--since', process.env.INGEST_SINCE ?? '23h'];
+  return ['logs', 'requests', ...query, '--limit', '10000', '--json'];
+}
+
 async function fetchRecords() {
-  const base = [
-    'logs',
-    'requests',
-    ...target(),
-    '--environment',
-    'production',
-    '--since',
-    process.env.INGEST_SINCE ?? '23h',
-    '--limit',
-    '10000',
-    '--json',
-  ];
   const records = [];
-  let page = await runVercel(base);
+  let page = await runVercel(pageArgs(null));
   records.push(...page.records);
   while (page.next) {
-    page = await runVercel([...base, '--next', page.next]);
+    page = await runVercel(pageArgs(page.next));
     records.push(...page.records);
   }
   return records;

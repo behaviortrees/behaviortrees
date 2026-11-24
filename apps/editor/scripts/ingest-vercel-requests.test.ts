@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain .mjs script, no types
-import { isSkippedPath, parsePage, toRow } from './ingest-vercel-requests.mjs';
+import { isSkippedPath, pageArgs, parsePage, toRow } from './ingest-vercel-requests.mjs';
 
 const record = {
   timestamp: '2026-11-13T14:11:03.181Z',
@@ -76,6 +76,19 @@ describe('toRow', () => {
   it('stores missing optional fields as null', () => {
     const row = toRow({ ...record, route: undefined, cacheResult: undefined, clientIpCountry: undefined, clientUserAgent: '' });
     expect([row[6], row[7], row[9], row[10]]).toEqual([null, null, null, null]);
+  });
+});
+
+describe('pageArgs', () => {
+  it('asks for production over the time window on the first page', () => {
+    const args = pageArgs(null);
+    expect(args).toEqual(expect.arrayContaining(['--environment', 'production', '--since', '--json']));
+    expect(args).not.toContain('--next');
+  });
+
+  it('sends only the cursor on later pages, since the CLI rejects filters with --next', () => {
+    const args = pageArgs('cursor-2');
+    expect(args).toEqual(['logs', 'requests', '--next', 'cursor-2', '--limit', '10000', '--json']);
   });
 });
 
