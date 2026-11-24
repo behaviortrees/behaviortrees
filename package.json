@@ -19,7 +19,7 @@
         "test": "turbo run test"
     },
     "devDependencies": {
-        "turbo": "^2.11.10"
+        "turbo": "^2.11.13"
     },
     "pnpm": {
         "overrides": {
